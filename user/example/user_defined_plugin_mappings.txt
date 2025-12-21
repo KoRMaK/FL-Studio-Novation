@@ -1,0 +1,34 @@
+-- Adding user-defined mappings to 'Plugin' mode for third-party plugins --
+
+To start adding mappings to 'Plugin' mode copy the file 'user_defined_plugin_mappings.py' to the `user` folder
+
+Please note, when the script is updated by FL Studio the `user` folder will be overwritten. In order to not lose
+the user-defined mappings please keep a copy in another location.
+
+To add support for a plugin, add a mapping entry to the list specified by
+the 'plugin_mappings' field in that file.
+
+A mapping has the following fields:
+    "plugin_name"       - [required] name used by FL Studio (See plugins.getPluginName)
+    "parameters"        - [required] list of up to eight parameters
+
+A parameter has the following fields:
+    "parameter_index"   - [required] index used by FL Studio (See plugins.getParamCount and plugins.getParamName)
+    "name"              - [optional] name that will be shown instead of default name (See plugins.getParamName)
+    "center"            - [optional] value from 0.0 to 1.0 indicating the 'center' deadzone
+
+An empty pair of curly braces `{}` indicates no parameter assigned to the control at that position.
+
+Also see the FL Studio MIDI Scripting Device API reference
+
+
+``` Example of a simple mapping
+{
+    "plugin_name": "NameOfExamplePlugin",
+    "parameters": [
+        {"parameter_index": 0},
+        {"parameter_index": 1},
+    ],
+}
+```
+

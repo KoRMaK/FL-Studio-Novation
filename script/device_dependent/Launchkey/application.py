@@ -6,6 +6,7 @@ from script.device_dependent.common import (
 from script.device_dependent.LaunchkeyRange import DrumPadLayoutManager
 from script.device_independent.fl_gui.fl_window_manager import FLWindowManager
 from script.device_independent.view import (
+    AnalogLabPresetButtonView,
     ChannelSelectedScreenView,
     ChannelSelectNameHighlightView,
     ChannelSelectView,
@@ -54,6 +55,7 @@ class Application:
         self.action_dispatcher.subscribe(self)
 
         self.global_views = {
+            AnalogLabPresetButtonView(self.action_dispatcher, self.fl, self.product_defs),
             ChannelSelectedScreenView(self.action_dispatcher, self.screen_writer, self.fl),
             ChannelSelectNameHighlightView(self.action_dispatcher, self.fl, self.model),
             ChannelSelectView(self.action_dispatcher, self.button_led_writer, self.fl, self.product_defs),

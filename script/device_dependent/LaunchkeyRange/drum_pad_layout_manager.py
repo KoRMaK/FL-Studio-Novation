@@ -17,7 +17,8 @@ class DrumPadLayoutManager:
             view.Default(self.action_dispatcher, pad_led_writer, self.fl, model),
         }
         self.channel_selection_independent_views = {
-            view.ChannelSelectView(self.action_dispatcher, button_led_writer, self.fl, product_defs)
+            view.AnalogLabPadView(self.action_dispatcher, pad_led_writer, self.fl),
+            view.ChannelSelectView(self.action_dispatcher, button_led_writer, self.fl, product_defs),
         }
 
     def show(self):

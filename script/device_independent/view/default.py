@@ -13,6 +13,7 @@ class Default(View):
     maximum_note = 131
 
     maximum_not_pressed_brightness = 200
+    ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
 
     def __init__(self, action_dispatcher, pad_led_writer, fl, model):
         super().__init__(action_dispatcher)
@@ -24,6 +25,13 @@ class Default(View):
         self.pad_led_writer = pad_led_writer
         self.colour_primary = Colours.off
         self.colour_secondary = Colours.off
+
+    def _is_analog_lab_selected(self):
+        """Check if Analog Lab V is the currently selected plugin"""
+        selected_plugin = self.fl.get_selected_plugin()
+        if selected_plugin is None:
+            return False
+        return any(name in selected_plugin for name in self.ANALOG_LAB_PLUGIN_NAMES)
 
     def _get_primary_and_secondary_colour(self):
         r, g, b = clamp_brightness(self.fl.get_channel_colour(), maximum=self.maximum_not_pressed_brightness)
@@ -86,6 +94,10 @@ class Default(View):
         self._turn_off_all_leds()
 
     def _update_all_leds(self):
+        # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
+        if self._is_analog_lab_selected():
+            return
+
         for pad in range(Pads.Num.value):
             colour = self._colour_for_pad(pad)
             self.pad_led_writer.set_pad_colour(pad, colour)
@@ -95,6 +107,10 @@ class Default(View):
             self.pad_led_writer.set_pad_colour(pad, Colours.off)
 
     def handle_PadPressAction(self, action):
+        # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
+        if self._is_analog_lab_selected():
+            return
+
         note = self._note_value_for_pad(action.pad)
         if not self._note_is_valid(note):
             return
@@ -103,6 +119,10 @@ class Default(View):
         self._update_all_leds()
 
     def handle_PadReleaseAction(self, action):
+        # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
+        if self._is_analog_lab_selected():
+            return
+
         note_for_pad = self.active_note_for_pad.pop(action.pad, None)
         if note_for_pad is not None:
             if self._pad_is_responsible_for_note_off(action.pad, note_for_pad):

@@ -1,3 +1,4 @@
+from .analog_lab_pad_view import AnalogLabPadView
 from .analog_lab_preset_button_view import AnalogLabPresetButtonView
 from .button_function_screen_view import ButtonFunctionScreenView
 from .channel_bank_controls_highlight_view import ChannelBankControlsHighlightView
@@ -72,6 +73,7 @@ from .transport_stop_button_view import TransportStopButtonView
 from .undo_button_view import UndoButtonView
 
 __all__ = [
+    "AnalogLabPadView",
     "AnalogLabPresetButtonView",
     "ButtonFunctionScreenView",
     "ChannelBankControlsHighlightView",

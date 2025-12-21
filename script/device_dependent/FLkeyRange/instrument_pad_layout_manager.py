@@ -2,6 +2,7 @@ from script.actions import ChannelRackNavigationModeChangedAction, FlGuiChannelS
 from script.colours import Colours
 from script.constants import ChannelNavigationMode
 from script.device_independent.view import (
+    AnalogLabPadView,
     ChannelSelectNameHighlightView,
     ChannelSelectView,
     Default,
@@ -34,6 +35,7 @@ class InstrumentPadLayoutManager:
             PresetButtonView(action_dispatcher, button_led_writer, fl, product_defs),
         }
         self.channel_selection_independent_views = {
+            AnalogLabPadView(self.action_dispatcher, self.pad_led_writer, self.fl),
             ChannelSelectView(self.action_dispatcher, self.button_led_writer, self.fl, product_defs),
             DefaultInstrumentLayoutScaledMappingController(self.action_dispatcher, model),
         }

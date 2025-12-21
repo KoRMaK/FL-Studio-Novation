@@ -19,7 +19,7 @@ class AnalogLabPadView(View):
     """
 
     ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
-    CC_SELECT_PRESET = 30  # TODO: Replace with actual CC number from user
+    CC_SELECT_PRESET = 117  # Preset Select - Arturia Keylab default CC mapping
     BOTTOM_LEFT_PAD = 0
 
     # Colors

@@ -13,6 +13,8 @@ class AnalogLabPresetButtonView(View):
     Handles preset navigation for Arturia Analog Lab V using MIDI CC messages.
     - CC #28 for Previous Preset
     - CC #29 for Next Preset
+
+    Works with both Launchkey (MixerBankLeft/Right) and FLkey (SelectPreviousPreset/SelectNextPreset).
     """
 
     ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
@@ -23,6 +25,19 @@ class AnalogLabPresetButtonView(View):
         super().__init__(action_dispatcher)
         self.fl = fl
         self.product_defs = product_defs
+
+        # Determine which button mapping to use based on product
+        self.prev_button_key = None
+        self.next_button_key = None
+
+        # Check if this is a Launchkey (has MixerBankLeft/Right)
+        if self.product_defs.FunctionToButton.get("MixerBankLeft") is not None:
+            self.prev_button_key = "MixerBankLeft"
+            self.next_button_key = "MixerBankRight"
+        # Check if this is FLkey (has SelectPreviousPreset/SelectNextPreset)
+        elif self.product_defs.FunctionToButton.get("SelectPreviousPreset") is not None:
+            self.prev_button_key = "SelectPreviousPreset"
+            self.next_button_key = "SelectNextPreset"
 
     def _is_analog_lab_selected(self):
         """Check if Analog Lab V is the currently selected plugin"""
@@ -43,14 +58,14 @@ class AnalogLabPresetButtonView(View):
         general.processRECEvent(rec_event_parameter, midi_value, mask)
 
     def handle_ButtonPressedAction(self, action):
-        # Only handle if Analog Lab is selected
-        if not self._is_analog_lab_selected():
+        # Only handle if Analog Lab is selected and buttons are configured
+        if not self._is_analog_lab_selected() or self.prev_button_key is None:
             return
 
-        # Handle Previous Preset (Left button)
-        if action.button == self.product_defs.FunctionToButton.get("MixerBankLeft"):
+        # Handle Previous Preset button
+        if action.button == self.product_defs.FunctionToButton.get(self.prev_button_key):
             self._send_cc_to_selected_channel(self.CC_PRESET_PREVIOUS, 127)
 
-        # Handle Next Preset (Right button)
-        elif action.button == self.product_defs.FunctionToButton.get("MixerBankRight"):
+        # Handle Next Preset button
+        elif action.button == self.product_defs.FunctionToButton.get(self.next_button_key):
             self._send_cc_to_selected_channel(self.CC_PRESET_NEXT, 127)

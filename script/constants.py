@@ -182,3 +182,79 @@ Scales = {
     "minor_pentatonic": [0, 3, 5, 7, 10],
     "major_pentatonic": [0, 2, 4, 7, 9],
 }
+
+# MODO DRUM pad-to-MIDI-note mapping
+# Customize this list to match your MODO DRUM kit layout
+# Default mapping uses standard drum MIDI note assignments
+# ModoDrumPadMapping = [
+#     36,  # Pad 0  -> C1  (Kick)
+#     38,  # Pad 1  -> D1  (Snare)
+#     42,  # Pad 2  -> F#1 (Closed Hi-Hat)
+#     46,  # Pad 3  -> A#1 (Open Hi-Hat)
+#     41,  # Pad 4  -> F1  (Low Tom)
+#     43,  # Pad 5  -> G1  (Low-Mid Tom)
+#     45,  # Pad 6  -> A1  (Mid Tom)
+#     47,  # Pad 7  -> B1  (High Tom)
+#     48,  # Pad 8  -> C2  (High Tom Alt)
+#     50,  # Pad 9  -> D2  (High Tom Alt 2)
+#     49,  # Pad 10 -> C#2 (Crash 1)
+#     51,  # Pad 11 -> D#2 (Ride)
+#     52,  # Pad 12 -> E2  (China)
+#     53,  # Pad 13 -> F2  (Ride Bell)
+#     54,  # Pad 14 -> F#2 (Tambourine)
+#     55,  # Pad 15 -> G2  (Splash)
+# ]
+
+ModoDrumPadMapping = [
+     40,  # Pad  0 -> Pad 4
+     38,  # Pad  1 -> Pad 5
+     44,  # Pad  2 -> Pad 6
+     65,  # Pad  3 -> Pad 7
+     68,  # Pad  4 -> Pad 12
+     29,  # Pad  5 -> Pad 13
+     73,  # Pad  6 -> Pad 14
+     71,  # Pad  7 -> Pad 15
+     63,  # Pad  8 -> Pad 0
+     36,  # Pad  9 -> Pad 1
+     42,  # Pad 10 -> Pad 2
+     35,  # Pad 11 -> Pad 3
+     74,  # Pad 12 -> Pad 8
+     76,  # Pad 13 -> Pad 9
+     77,  # Pad 14 -> Pad 10
+     79,  # Pad 15 -> Pad 11
+]
+
+# MODO DRUM pad color mapping (RGB tuples)
+# Customize this to set static colors for each pad
+# If not provided, colors will be read from the plugin or use default orange
+# Use the dump_fpc_layout.py script to generate this from your FPC kit
+pad_red = (153, 96, 77)
+pad_orange = (153, 125, 77)
+pad_blue = (77, 134, 153)
+pad_green = (96, 153, 77)
+pad_dark_green = (77, 153, 86)
+ModoDrumPadColors = {
+    # Example (uncomment and customize):
+    #0: pad_blue,   # Pad 0 - Kick (orange)
+    # 1: (128, 255, 64),   # Pad 1 - Snare (green)
+    # 2: (64, 128, 255),   # Pad 2 - Hi-Hat (blue)
+    # ... etc
+    0: pad_blue, # snare rim
+    1: pad_blue, # snare hit
+    2: pad_dark_green, # half hihat
+    3: pad_dark_green, # pedal hi hat
+    4: pad_green, # crash
+    5: pad_green, # splash
+    6: pad_blue, # ride
+    7: pad_dark_green, # open hihat
+    8: pad_blue, # snare side
+    9: pad_red, # kick 1
+    10: pad_green, # closed hihsy
+    11: pad_orange, # kick 2
+    12: pad_orange, # hi tom
+    13: pad_orange, # mid tom
+    14: pad_orange, # lo tom
+    15: pad_orange, # floor tom
+}
+
+# To populate this, run dump_fpc_layout.py in FL Studio and copy the output

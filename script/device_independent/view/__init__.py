@@ -27,6 +27,7 @@ from .fpc import Fpc
 from .fpc_bank_view import FpcBankView
 from .metronome_button_view import MetronomeButtonView
 from .mixer_bank_button_view import MixerBankButtonView
+from .modo_drum import ModoDrum
 from .mixer_bank_highlight_view import MixerBankHighlightView
 from .mixer_bank_view import MixerBankView
 from .mixer_master_volume_view import MixerMasterVolumeView
@@ -103,6 +104,7 @@ __all__ = [
     "MetronomeButtonView",
     "MetronomeButtonView",
     "MixerBankButtonView",
+    "ModoDrum",
     "MixerBankHighlightView",
     "MixerBankView",
     "MixerMasterVolumeView",

@@ -1,6 +1,6 @@
 from script.actions import ChannelRackNavigationModeChangedAction, FlGuiChannelSelectAction
 from script.colours import Colours
-from script.constants import ChannelNavigationMode
+from script.constants import ChannelNavigationMode, ModoDrumPadMapping, ModoDrumPadColors
 from script.device_independent.view import (
     AnalogLabPadView,
     ChannelSelectNameHighlightView,
@@ -10,6 +10,7 @@ from script.device_independent.view import (
     DefaultInstrumentLayoutScaledMappingController,
     Fpc,
     FpcBankView,
+    ModoDrum,
     PresetButtonScreenView,
     PresetButtonView,
     SlicerPluginBankView,
@@ -123,6 +124,15 @@ class InstrumentPadLayoutManager:
     def _create_instrument_view_for_plugin(self, plugin):
         if plugin == InstrumentPlugin.Fpc.value:
             return Fpc(self.action_dispatcher, self.pad_led_writer, self.fl, self.model)
+        if plugin == InstrumentPlugin.ModoDrum.value:
+            return ModoDrum(
+                self.action_dispatcher,
+                self.pad_led_writer,
+                self.fl,
+                self.model,
+                ModoDrumPadMapping,
+                ModoDrumPadColors if ModoDrumPadColors else None
+            )
         if plugin == InstrumentPlugin.FruitySlicer:
             return SlicerPluginView(
                 self.action_dispatcher,
@@ -145,6 +155,8 @@ class InstrumentPadLayoutManager:
 
     def _create_bank_view_for_plugin(self, plugin):
         if plugin == InstrumentPlugin.Fpc:
+            return FpcBankView(self.action_dispatcher, self.button_led_writer, self.product_defs, self.model)
+        if plugin == InstrumentPlugin.ModoDrum:
             return FpcBankView(self.action_dispatcher, self.button_led_writer, self.product_defs, self.model)
         if plugin == InstrumentPlugin.FruitySlicer:
             return SlicerPluginBankView(

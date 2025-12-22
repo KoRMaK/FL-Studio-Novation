@@ -1,0 +1,231 @@
+# Analog Lab V Integration for Novation Controllers - Session Summary
+
+## Overview
+Implemented complete Arturia Analog Lab V integration for Novation Launchkey MK3 and FLkey controllers in FL Studio. When Analog Lab V is selected as the current plugin, the controllers automatically switch to Analog Lab control mode with custom button mappings and pad displays.
+
+## Features Implemented
+
+### 1. Preset Navigation via MIDI CC
+**Controllers Supported:** Launchkey MK3, FLkey 37/49/61/Mini
+
+**Launchkey MK3 Button Mapping:**
+- Left button → Previous Preset (CC #28)
+- Right button → Next Preset (CC #29)
+- Disables mixer banking when Analog Lab selected
+
+**FLkey Button Mapping:**
+- Preset Up button → Previous Preset (CC #28)
+- Preset Down button → Next Preset (CC #29)
+- Disables normal preset navigation when Analog Lab selected
+
+### 2. Pad Control - Preset Selection
+**Controllers Supported:** Launchkey MK3 (Drum layout), FLkey (Instrument layout)
+
+When Analog Lab V is selected:
+- All 16 pads turn off except bottom-left pad (pad 0)
+- Bottom-left pad glows dim purple (RGB: 128, 0, 255 at 15% brightness)
+- When pressed: turns bright blue (RGB: 0, 128, 255) and sends CC #117
+- When released: returns to dim purple
+
+## Files Created
+
+### 1. `script/device_independent/view/analog_lab_preset_button_view.py`
+- Detects when Analog Lab V is selected
+- Auto-detects controller type (Launchkey vs FLkey)
+- Sends MIDI CC #28/#29 for preset navigation
+- Works with both controller types using different button mappings
+
+### 2. `script/device_independent/view/analog_lab_pad_view.py`
+- Manages pad display when Analog Lab selected
+- Controls bottom-left pad lighting (dim purple/bright blue)
+- Sends CC #117 for preset selection
+- Automatically activates/deactivates based on plugin selection
+
+## Files Modified
+
+### View Layer
+1. **`script/device_independent/view/__init__.py`**
+   - Added exports for `AnalogLabPadView` and `AnalogLabPresetButtonView`
+
+2. **`script/device_independent/view/preset_button_view.py`**
+   - Added Analog Lab detection
+   - Skips normal preset handling when Analog Lab selected
+
+3. **`script/device_independent/view/default.py`**
+   - Added Analog Lab detection
+   - Skips pad updates and note handling when Analog Lab selected
+
+4. **`script/device_independent/view/mixer_bank_button_view.py`**
+   - Added Analog Lab detection
+   - Skips mixer banking when Analog Lab selected
+
+### Device-Specific Integration
+
+**Launchkey MK3:**
+1. **`script/device_dependent/Launchkey/application.py`**
+   - Added `AnalogLabPresetButtonView` to global views
+
+2. **`script/device_dependent/LaunchkeyRange/drum_pad_layout_manager.py`**
+   - Added `AnalogLabPadView` to channel-independent views
+
+**FLkey:**
+1. **`script/device_dependent/FLkey/application.py`**
+   - Added `AnalogLabPresetButtonView` to global views
+
+2. **`script/device_dependent/FLkeyRange/instrument_pad_layout_manager.py`**
+   - Added `AnalogLabPadView` to channel-independent views
+   - Added import for `AnalogLabPadView`
+
+## Key MIDI CC Mappings
+
+| Function | CC Number | Source |
+|----------|-----------|--------|
+| Previous Preset | CC #28 | Arturia Forum |
+| Next Preset | CC #29 | Arturia Forum |
+| Preset Select | CC #117 | Arturia Keylab mapping |
+
+## Technical Implementation Details
+
+### Plugin Detection
+All views use the same detection method:
+```python
+ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
+
+def _is_analog_lab_selected(self):
+    selected_plugin = self.fl.get_selected_plugin()
+    if selected_plugin is None:
+        return False
+    return any(name in selected_plugin for name in self.ANALOG_LAB_PLUGIN_NAMES)
+```
+
+### MIDI CC Sending
+Uses FL Studio's `general.processRECEvent()` API:
+```python
+rec_event_parameter = cc_number + channels.getRecEventId(selected_channel)
+midi_value = int((value / 127.0) * midi.FromMIDI_Max)
+mask = midi.REC_MIDIController
+general.processRECEvent(rec_event_parameter, midi_value, mask)
+```
+
+### Controller Auto-Detection
+`AnalogLabPresetButtonView` automatically detects controller type:
+- Checks for `MixerBankLeft/Right` → Launchkey
+- Checks for `SelectPreviousPreset/SelectNextPreset` → FLkey
+- Maps appropriate buttons based on detection
+
+## How It Works
+
+1. User selects a channel with Analog Lab V in FL Studio channel rack
+2. Script automatically detects Analog Lab is selected via `fl.get_selected_plugin()`
+3. Normal controller behavior is suppressed:
+   - Mixer banking disabled (Launchkey)
+   - Normal preset navigation disabled (FLkey)
+   - Default pad behavior disabled (both)
+4. Analog Lab-specific handlers activate:
+   - Button presses send CC #28/#29 to Analog Lab
+   - Pads display custom lighting
+   - Bottom-left pad sends CC #117
+5. When switching to different plugin, controllers return to normal operation
+
+## Color Definitions
+- **Dim Purple:** `scale_colour((128, 0, 255), 0.15)` - 15% brightness
+- **Bright Blue:** `(0, 128, 255)` - Full brightness
+
+## References
+- [Arturia Forum - MIDI CCs for Keylab](https://forum.arturia.com/t/midi-ccs-used-by-keylab-with-v-collection-and-analog-lab/5901)
+- [Arturia Forum - CC #28/#29 for preset navigation](https://forum.arturia.com/t/bug-report-alv-changes-preset-previous-next-in-my-playlist-when-receiving-midi-cc-28-and-29/5693/44)
+
+## MODO DRUM Integration
+
+### Overview
+Added customizable support for IK Multimedia's MODO DRUM with direct pad-to-MIDI-note mapping. Unlike FPC which queries the plugin for note assignments, MODO DRUM uses a configurable mapping that you can customize for different drum kits.
+
+### Files Created
+
+1. **`script/device_independent/view/modo_drum.py`**
+   - Custom view for MODO DRUM with configurable pad-to-MIDI-note mapping
+   - Accepts custom mapping via `pad_to_note_mapping` parameter
+   - Supports both list and dict mapping formats
+   - Falls back to drum colors if plugin colors unavailable
+   - Supports banking if mapping includes more than 16 notes
+
+### Files Modified
+
+1. **`script/fl_constants.py`**
+   - Added `ModoDrum = "MODO DRUM"` to `InstrumentPlugin` enum
+
+2. **`script/constants.py`**
+   - Added `ModoDrumPadMapping` - customizable list of MIDI note numbers (one per pad)
+   - Added `ModoDrumPadColors` - optional dict mapping pads to RGB color tuples
+
+3. **`script/device_dependent/FLkeyRange/instrument_pad_layout_manager.py`**
+   - Updated `_create_instrument_view_for_plugin` to return `ModoDrum` view with custom mapping and colors
+   - Updated `_create_bank_view_for_plugin` to return `FpcBankView` for MODO DRUM
+   - Imported `ModoDrumPadMapping` and `ModoDrumPadColors` constants
+
+4. **`script/device_independent/view/__init__.py`**
+   - Added `ModoDrum` export
+
+5. **`dump_fpc_layout.py`**
+   - Utility script to dump FPC pad layouts with MIDI notes and colors
+   - Outputs ready-to-paste Python code for both mappings
+
+### Customizing the Mapping
+
+Edit `script/constants.py` to customize the pad-to-note mapping and colors.
+
+#### MIDI Note Mapping
+
+```python
+ModoDrumPadMapping = [
+    36,  # Pad 0  -> C1  (Kick)
+    38,  # Pad 1  -> D1  (Snare)
+    42,  # Pad 2  -> F#1 (Closed Hi-Hat)
+    # ... etc
+]
+```
+
+Each entry corresponds to a pad (0-15) and specifies the MIDI note number to send when that pad is pressed.
+
+#### Color Mapping (Optional)
+
+```python
+ModoDrumPadColors = {
+    0: (255, 128, 64),   # Pad 0 - Kick (orange)
+    1: (128, 255, 64),   # Pad 1 - Snare (green)
+    2: (64, 128, 255),   # Pad 2 - Hi-Hat (blue)
+    # ... etc
+}
+```
+
+Each entry maps a pad number to an RGB color tuple. If not provided, colors will be read from the plugin or use default orange.
+
+### Using the FPC Layout Dumper
+
+To easily copy your FPC kit layout to MODO DRUM:
+
+1. Load FPC with your desired kit in FL Studio
+2. Select the FPC channel
+3. Run `dump_fpc_layout.py` in FL Studio's Script output:
+   ```python
+   exec(open(r"C:\Users\Corey\Documents\Image-Line\Fl Studio\Settings\Hardware\Novation\dump_fpc_layout.py").read())
+   ```
+4. The script outputs both `ModoDrumPadMapping` and `ModoDrumPadColors` ready to copy
+5. Paste the output into `script/constants.py`
+
+### Behavior
+When MODO DRUM is selected in Instrument pad layout:
+- Each pad sends its configured MIDI note number
+- Pad colors use static mapping (if provided), plugin query, or fallback to orange
+- Direct MIDI note mapping (doesn't query plugin like FPC)
+- Banking supported if you provide more than 16 mappings
+- Easy to customize for different MODO DRUM kits
+- Static color mapping ensures consistent pad colors regardless of plugin state
+
+### Default Mapping
+Uses standard General MIDI drum note assignments:
+- Pads 0-7: Kick, Snare, Hi-Hats, Toms
+- Pads 8-15: Additional Toms, Cymbals, Percussion
+
+## Version Info
+FL Studio script version: 24.04.26.2

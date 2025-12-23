@@ -65,7 +65,10 @@ class MixerBankButtonView(View):
         self.arrow_button_view.handle_ButtonReleasedAction(action)
 
     def handle_TimerEventAction(self, action):
-        # Always forward timer events for scrolling behavior
+        # Skip timer events if Analog Lab is selected (prevents scrolling)
+        if self._is_analog_lab_selected():
+            return
+        # Forward timer events for scrolling behavior
         self.arrow_button_view.handle_TimerEventAction(action)
 
     def _on_page_changed(self):

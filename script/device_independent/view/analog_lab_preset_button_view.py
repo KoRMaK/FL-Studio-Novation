@@ -31,16 +31,16 @@ class AnalogLabPresetButtonView(View):
         self.prev_button_key = None
         self.next_button_key = None
 
-        #print("inside analog button preset")
+        print("inside analog button preset")
 
         # Check if this is a Launchkey (has MixerBankLeft/Right)
         if self.product_defs.FunctionToButton.get("ChannelPluginPageLeft") is not None:
             self.prev_button_key = "ChannelPluginPageLeft"
             self.next_button_key = "ChannelPluginPageRight"
         # Check if this is FLkey (has SelectPreviousPreset/SelectNextPreset)
-        elif self.product_defs.FunctionToButton.get("SelectPreviousPreset") is not None:
-            self.prev_button_key = "SelectPreviousPreset"
-            self.next_button_key = "SelectNextPreset"
+        elif self.product_defs.FunctionToButton.get("MixerBankRight") is not None:
+            self.prev_button_key = "MixerBankLeft"
+            self.next_button_key = "MixerBankRight"
 
         #print(self.next_button_key)
 
@@ -65,20 +65,30 @@ class AnalogLabPresetButtonView(View):
     def handle_ButtonPressedAction(self, action):
         #print("analog lab handle_ButtonPressedAction")
         # Only handle if Analog Lab is selected and buttons are configured
+        print("_is_analog_lab_selected")
+        print(action.button)
+        print("onto action buttons")
+        print(action.button)
+        print("self.product_defs.FunctionToButton.get(\"MixerBankLeft\")")
+        print(self.product_defs.FunctionToButton.get("MixerBankLeft"))
         if not self._is_analog_lab_selected() or self.prev_button_key is None:
             return
 
-        # print("onto action buttons")
-        # print(action.button)
+        print("paste gate ")
+        
         # print(dir(action))
         # print(self.product_defs.FunctionToButton.get("PageLeft"))
         # print(self.prev_button_key)
         # print(self.product_defs.FunctionToButton.get(self.prev_button_key))
         # Handle Previous Preset button
+        print("action.button and defs")
+        print(action.button)
+        print(self.product_defs.FunctionToButton.get(self.prev_button_key))
+        print(self.product_defs.FunctionToButton.get(self.next_button_key))
         if action.button == self.product_defs.FunctionToButton.get(self.prev_button_key):
           # self._send_cc_to_selected_channel(self.CC_PRESET_PREVIOUS, 127)
           ui.up()
-          # print("up preset was clicked")
+          print("up preset was clicked")
 
 
         # Handle Next Preset button

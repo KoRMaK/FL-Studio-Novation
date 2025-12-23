@@ -15,11 +15,12 @@ class Default(View):
     maximum_not_pressed_brightness = 200
     ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
 
-    def __init__(self, action_dispatcher, pad_led_writer, fl, model):
+    def __init__(self, action_dispatcher, pad_led_writer, fl, model, channel_selection_manager=None):
         super().__init__(action_dispatcher)
         self.action_dispatcher = action_dispatcher
         self.fl = fl
         self.model = model
+        self.channel_selection_manager = channel_selection_manager
         self.active_note_for_pad = {}
         self.pad_for_active_note = {}
         self.pad_led_writer = pad_led_writer

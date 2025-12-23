@@ -46,12 +46,15 @@ class Channel:
         mask = midi.REC_MIDIController
         general.processRECEvent(rec_event_parameter, value, mask)
 
-    def set_pitch(self, value):
+    def set_pitch(self, value, group_channel=None):
         """
         value: Normalised pitch value in range 0 to 1
+        group_channel: Optional group channel index. If None, uses selected channel.
         """
         bipolar_pitch_value = util.math.normalised_unipolar_to_bipolar(value)
-        channels.setChannelPitch(channels.selectedChannel(), bipolar_pitch_value)
+        if group_channel is None:
+            group_channel = channels.selectedChannel()
+        channels.setChannelPitch(group_channel, bipolar_pitch_value)
 
 
 class Plugin:

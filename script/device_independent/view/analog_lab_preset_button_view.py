@@ -22,10 +22,11 @@ class AnalogLabPresetButtonView(View):
     CC_PRESET_PREVIOUS = 28
     CC_PRESET_NEXT = 29
 
-    def __init__(self, action_dispatcher, fl, product_defs):
+    def __init__(self, action_dispatcher, fl, product_defs, channel_selection_manager=None):
         super().__init__(action_dispatcher)
         self.fl = fl
         self.product_defs = product_defs
+        self.channel_selection_manager = channel_selection_manager
 
         # Determine which button mapping to use based on product
         self.prev_button_key = None
@@ -53,7 +54,11 @@ class AnalogLabPresetButtonView(View):
 
     def _send_cc_to_selected_channel(self, cc_number, value=127):
         """Send a MIDI CC message to the selected channel"""
-        selected_channel = self.fl.selected_channel()
+        if self.channel_selection_manager:
+            selected_channel = self.channel_selection_manager.get_active_channel()
+        else:
+            selected_channel = self.fl.selected_channel()
+
         if selected_channel is None:
             return
 

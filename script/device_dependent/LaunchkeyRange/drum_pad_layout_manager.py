@@ -5,20 +5,21 @@ from util.mapped_pad_led_writer import MappedPadLedWriter
 
 
 class DrumPadLayoutManager:
-    def __init__(self, action_dispatcher, pad_led_writer, button_led_writer, fl, product_defs, model):
+    def __init__(self, action_dispatcher, pad_led_writer, button_led_writer, fl, product_defs, model, channel_selection_manager=None):
         self.action_dispatcher = action_dispatcher
         self.fl = fl
         self.model = model
+        self.channel_selection_manager = channel_selection_manager
         pad_led_writer = MappedPadLedWriter(
             pad_led_writer, product_defs.Constants.NotesForPadLayout.value[product_defs.PadLayout.Drum]
         )
         self.channel_selection_dependent_views = {
-            view.ChannelSelectNameHighlightView(self.action_dispatcher, self.fl, model),
-            view.Default(self.action_dispatcher, pad_led_writer, self.fl, model),
+            view.ChannelSelectNameHighlightView(self.action_dispatcher, self.fl, model, channel_selection_manager),
+            view.Default(self.action_dispatcher, pad_led_writer, self.fl, model, channel_selection_manager),
         }
         self.channel_selection_independent_views = {
-            view.AnalogLabPadView(self.action_dispatcher, pad_led_writer, self.fl),
-            view.ChannelSelectView(self.action_dispatcher, button_led_writer, self.fl, product_defs),
+            view.AnalogLabPadView(self.action_dispatcher, pad_led_writer, self.fl, channel_selection_manager),
+            view.ChannelSelectView(self.action_dispatcher, button_led_writer, self.fl, product_defs, channel_selection_manager),
         }
 
     def show(self):

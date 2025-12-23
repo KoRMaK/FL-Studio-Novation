@@ -26,10 +26,11 @@ class AnalogLabPadView(View):
     DIM_PURPLE = scale_colour((128, 0, 255), 0.15)  # Dim purple (15% brightness)
     BRIGHT_BLUE = (0, 128, 255)  # Bright blue
 
-    def __init__(self, action_dispatcher, pad_led_writer, fl):
+    def __init__(self, action_dispatcher, pad_led_writer, fl, channel_selection_manager=None):
         super().__init__(action_dispatcher)
         self.pad_led_writer = pad_led_writer
         self.fl = fl
+        self.channel_selection_manager = channel_selection_manager
         self.is_active = False
         self.pad_pressed = False
 
@@ -70,7 +71,11 @@ class AnalogLabPadView(View):
 
     def _send_cc_to_selected_channel(self, cc_number, value=127):
         """Send a MIDI CC message to the selected channel"""
-        selected_channel = self.fl.selected_channel()
+        if self.channel_selection_manager:
+            selected_channel = self.channel_selection_manager.get_active_channel()
+        else:
+            selected_channel = self.fl.selected_channel()
+
         if selected_channel is None:
             return
 

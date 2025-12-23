@@ -45,6 +45,9 @@ class Model:
         self.slice_x_active_bank = 4
         self.sequencer_active_page = 0
 
+        # Launchkey's independent channel selection (separate from FL Studio UI)
+        self.selected_channel_index = None
+
         self.mixer_track_active_bank = 0
         self.mixer_tracks_in_active_bank = []
         self.first_mixer_track_index = 1

@@ -34,6 +34,10 @@ class MixerBankButtonView(View):
         return any(name in selected_plugin for name in self.ANALOG_LAB_PLUGIN_NAMES)
 
     def _on_show(self):
+        # Skip mixer banking if Analog Lab V is selected
+        if self._is_analog_lab_selected():
+                return
+                
         self._handle_docked_tracks_changed()
         self.arrow_button_view.set_active_page(self.model.mixer_track_active_bank)
         self._update_mixer_bank_state(self.model.mixer_track_active_bank, self._get_tracks_for_center_dock())
@@ -51,7 +55,7 @@ class MixerBankButtonView(View):
             ]:
                 return
         # Let the arrow button view handle it
-        self.arrow_button_view.handle_ButtonPressedAction(action)
+        #self.arrow_button_view.handle_ButtonPressedAction(action)
 
     def handle_ButtonReleasedAction(self, action):
         # Skip mixer banking if Analog Lab V is selected
@@ -62,14 +66,14 @@ class MixerBankButtonView(View):
             ]:
                 return
         # Let the arrow button view handle it
-        self.arrow_button_view.handle_ButtonReleasedAction(action)
+        #self.arrow_button_view.handle_ButtonReleasedAction(action)
 
     def handle_TimerEventAction(self, action):
         # Skip timer events if Analog Lab is selected (prevents scrolling)
         if self._is_analog_lab_selected():
             return
         # Forward timer events for scrolling behavior
-        self.arrow_button_view.handle_TimerEventAction(action)
+        #self.arrow_button_view.handle_TimerEventAction(action)
 
     def _on_page_changed(self):
         self.model.mixer_track_active_bank = self.arrow_button_view.active_page

@@ -30,7 +30,13 @@ class DrumPadLayoutManager:
             for pad, note in enumerate([4, 5, 6, 7, 12, 13, 14, 15, 0, 1, 2, 3, 8, 9, 10, 11])
         }
 
-        if self.fl.is_any_channel_selected():
+        # Check if any channel is selected (using independent selection if available)
+        if self.channel_selection_manager:
+            has_selection = self.channel_selection_manager.get_active_channel() is not None
+        else:
+            has_selection = self.fl.is_any_channel_selected()
+
+        if has_selection:
             for global_view in self.channel_selection_dependent_views:
                 global_view.show()
 
@@ -38,7 +44,13 @@ class DrumPadLayoutManager:
             global_view.show()
 
     def hide(self):
-        if self.fl.is_any_channel_selected():
+        # Check if any channel is selected (using independent selection if available)
+        if self.channel_selection_manager:
+            has_selection = self.channel_selection_manager.get_active_channel() is not None
+        else:
+            has_selection = self.fl.is_any_channel_selected()
+
+        if has_selection:
             for global_view in self.channel_selection_dependent_views:
                 global_view.hide()
 
@@ -50,7 +62,13 @@ class DrumPadLayoutManager:
         self.action_dispatcher.unsubscribe(self)
 
     def handle_OnRefreshAction(self, action):
-        if self.fl.is_any_channel_selected():
+        # Check if any channel is selected (using independent selection if available)
+        if self.channel_selection_manager:
+            has_selection = self.channel_selection_manager.get_active_channel() is not None
+        else:
+            has_selection = self.fl.is_any_channel_selected()
+
+        if has_selection:
             if action.flags & RefreshFlags.ChannelSelection.value or action.flags & RefreshFlags.ChannelGroup.value:
                 self.action_dispatcher.dispatch(FlGuiChannelSelectAction())
 

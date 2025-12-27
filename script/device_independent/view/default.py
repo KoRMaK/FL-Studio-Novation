@@ -35,7 +35,11 @@ class Default(View):
         return any(name in selected_plugin for name in self.ANALOG_LAB_PLUGIN_NAMES)
 
     def _get_primary_and_secondary_colour(self):
-        r, g, b = clamp_brightness(self.fl.get_channel_colour(), maximum=self.maximum_not_pressed_brightness)
+        if self.channel_selection_manager:
+            active_channel = self.channel_selection_manager.get_active_channel()
+        else:
+            active_channel = None
+        r, g, b = clamp_brightness(self.fl.get_channel_colour(group_channel=active_channel), maximum=self.maximum_not_pressed_brightness)
         dim_scaling_divisor = 3
         return (r, g, b), (r // dim_scaling_divisor, g // dim_scaling_divisor, b // dim_scaling_divisor)
 

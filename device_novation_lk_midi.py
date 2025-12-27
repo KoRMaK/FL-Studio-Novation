@@ -35,8 +35,8 @@ def scan_for_marked_channel():
 
 def OnIdle():
     """Called periodically - scan for marked channel"""
-    scan_for_marked_channel()
-    print("lk idle")
+    #scan_for_marked_channel()
+    #print("lk idle")
 
 
 def OnNoteOn(eventData):

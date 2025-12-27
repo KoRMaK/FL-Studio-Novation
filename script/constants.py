@@ -207,14 +207,14 @@ Scales = {
 
 ModoDrumPadMapping = [
      40,  # Pad  0 -> Pad 4
-     38,  # Pad  1 -> Pad 5
+     63,  # Pad  1 -> Pad 5
      44,  # Pad  2 -> Pad 6
      65,  # Pad  3 -> Pad 7
      68,  # Pad  4 -> Pad 12
      29,  # Pad  5 -> Pad 13
      73,  # Pad  6 -> Pad 14
      71,  # Pad  7 -> Pad 15
-     63,  # Pad  8 -> Pad 0
+     38,  # Pad  8 -> Pad 0
      36,  # Pad  9 -> Pad 1
      42,  # Pad 10 -> Pad 2
      35,  # Pad 11 -> Pad 3

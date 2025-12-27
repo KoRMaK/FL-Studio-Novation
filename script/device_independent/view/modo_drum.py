@@ -63,6 +63,7 @@ class ModoDrum(View):
         self.supports_banking = len(self.pad_to_note_mapping) > 16
 
     def _on_show(self):
+        print("modo drum page")
         self._update_notes_for_pads()
         self._update_colours_for_pads()
 

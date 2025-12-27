@@ -1,6 +1,7 @@
 from script.colours import Colours
 from script.colour_utils import scale_colour
 from script.device_independent.util_view.view import View
+import time
 
 try:
     import channels
@@ -13,18 +14,20 @@ except ImportError:
 class AnalogLabPadView(View):
     """
     Manages pad display and interaction when Analog Lab V is selected.
-    - All pads are turned off except bottom-left pad (pad 0)
-    - Bottom-left pad glows dim purple normally
-    - When pressed, glows blue and sends MIDI CC for preset selection
+    - All pads are turned off except top-left pad (pad 0)
+    - Top-left pad glows green - when pressed, iterates through MIDI messages
+
+    Physical layout:
+    Row 1 (top):     0   1   2   3   4   5   6   7
+    Row 2 (bottom):  8   9  10  11  12  13  14  15
     """
 
     ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
-    CC_SELECT_PRESET = 117  # Preset Select - Arturia Keylab default CC mapping
-    BOTTOM_LEFT_PAD = 0
+    TOP_LEFT_PAD = 0  # Physical top-left position
 
     # Colors
-    DIM_PURPLE = scale_colour((128, 0, 255), 0.15)  # Dim purple (15% brightness)
-    BRIGHT_BLUE = (0, 128, 255)  # Bright blue
+    DIM_GREEN = scale_colour((0, 255, 0), 0.3)  # Dim green (30% brightness)
+    BRIGHT_GREEN = (0, 255, 0)  # Bright green
 
     def __init__(self, action_dispatcher, pad_led_writer, fl, channel_selection_manager=None):
         super().__init__(action_dispatcher)
@@ -33,6 +36,7 @@ class AnalogLabPadView(View):
         self.channel_selection_manager = channel_selection_manager
         self.is_active = False
         self.pad_pressed = False
+        self.midi_iteration_running = False
 
     def _is_analog_lab_selected(self):
         """Check if Analog Lab V is the currently selected plugin"""
@@ -55,11 +59,10 @@ class AnalogLabPadView(View):
                 self._hide_analog_lab_pads()
 
     def _show_analog_lab_pads(self):
-        """Turn off all pads except bottom-left, which shows dim purple"""
-        # Turn off all 16 pads
+        """Turn off all pads except top-left (pad 0) which shows dim green"""
         for pad in range(16):
-            if pad == self.BOTTOM_LEFT_PAD:
-                self.pad_led_writer.set_pad_colour(pad, self.DIM_PURPLE)
+            if pad == self.TOP_LEFT_PAD:
+                self.pad_led_writer.set_pad_colour(pad, self.DIM_GREEN)
             else:
                 self.pad_led_writer.set_pad_colour(pad, Colours.off)
 
@@ -69,20 +72,62 @@ class AnalogLabPadView(View):
             self.pad_led_writer.set_pad_colour(pad, Colours.off)
         self.pad_pressed = False
 
-    def _send_cc_to_selected_channel(self, cc_number, value=127):
-        """Send a MIDI CC message to the selected channel"""
+    def _iterate_through_midi_messages(self):
+        """Iterate through all possible MIDI messages to find favorite toggle"""
+        if self.midi_iteration_running:
+            print("MIDI iteration already running, skipping...")
+            return
+
+        self.midi_iteration_running = True
+        print("=" * 60)
+        print("Starting MIDI message iteration for Analog Lab favorite discovery")
+        print("=" * 60)
+
         if self.channel_selection_manager:
             selected_channel = self.channel_selection_manager.get_active_channel()
         else:
             selected_channel = self.fl.selected_channel()
 
         if selected_channel is None:
+            print("ERROR: No channel selected")
+            self.midi_iteration_running = False
             return
 
-        rec_event_parameter = cc_number + channels.getRecEventId(selected_channel)
-        midi_value = int((value / 127.0) * midi.FromMIDI_Max)
-        mask = midi.REC_MIDIController
-        general.processRECEvent(rec_event_parameter, midi_value, mask)
+        # Get the rec event ID for this channel
+        rec_event_id = channels.getRecEventId(selected_channel)
+
+        # Iterate through all CC messages (0-127) with various values
+        print("\n--- Testing CC (Control Change) Messages ---")
+        for cc_num in range(128):
+            for value in [0, 64, 127]:  # Test off, mid, on
+                # Skip CC 18 value 0 - causes FL Studio crash
+                if cc_num == 18: # and value == 0:
+                    print(f"CC {cc_num:3d} = {value:3d} (SKIPPED - causes crash)")
+                    continue
+
+                rec_event_parameter = cc_num + rec_event_id
+                midi_value = int((value / 127.0) * midi.FromMIDI_Max)
+                mask = midi.REC_MIDIController
+
+                print(f"CC {cc_num:3d} = {value:3d} (MIDI val: {midi_value})")
+                general.processRECEvent(rec_event_parameter, midi_value, mask)
+                time.sleep(0.2)  # 200ms pause between messages
+
+        # Test Note On messages
+        print("\n--- Testing Note On Messages ---")
+        for note in range(128):
+            for velocity in [64, 127]:
+                print(f"Note On: {note:3d}, Velocity: {velocity:3d}")
+                self.fl.send_note_on(note, velocity)
+                time.sleep(0.1)
+                # Send note off immediately
+                self.fl.send_note_off(note)
+                time.sleep(0.1)
+
+        print("=" * 60)
+        print("MIDI iteration complete!")
+        print("=" * 60)
+        self.midi_iteration_running = False
 
     def _on_show(self):
         self._update_pad_display()
@@ -100,18 +145,19 @@ class AnalogLabPadView(View):
         if not self.is_active:
             return
 
-        if action.pad == self.BOTTOM_LEFT_PAD:
-            # Change to bright blue and send MIDI CC
-            self.pad_led_writer.set_pad_colour(self.BOTTOM_LEFT_PAD, self.BRIGHT_BLUE)
-            self._send_cc_to_selected_channel(self.CC_SELECT_PRESET, 127)
+        if action.pad == self.TOP_LEFT_PAD:
+            # Change to bright green and start MIDI iteration
+            self.pad_led_writer.set_pad_colour(self.TOP_LEFT_PAD, self.BRIGHT_GREEN)
             self.pad_pressed = True
+            print("\n[TOP LEFT PAD (0) PRESSED] Starting MIDI message iteration...")
+            self._iterate_through_midi_messages()
 
     def handle_PadReleaseAction(self, action):
         """Handle pad release events"""
         if not self.is_active:
             return
 
-        if action.pad == self.BOTTOM_LEFT_PAD and self.pad_pressed:
-            # Return to dim purple
-            self.pad_led_writer.set_pad_colour(self.BOTTOM_LEFT_PAD, self.DIM_PURPLE)
+        if action.pad == self.TOP_LEFT_PAD and self.pad_pressed:
+            # Return to dim green
+            self.pad_led_writer.set_pad_colour(self.TOP_LEFT_PAD, self.DIM_GREEN)
             self.pad_pressed = False

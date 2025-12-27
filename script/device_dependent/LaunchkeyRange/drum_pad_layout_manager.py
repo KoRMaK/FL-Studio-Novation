@@ -1,6 +1,8 @@
 from script.actions import FlGuiChannelSelectAction
+from script.constants import ModoDrumPadMapping, ModoDrumPadColors
 from script.device_independent import view
-from script.fl_constants import RefreshFlags
+from script.device_independent.view import ModoDrum
+from script.fl_constants import InstrumentPlugin, RefreshFlags
 from util.mapped_pad_led_writer import MappedPadLedWriter
 
 
@@ -10,17 +12,21 @@ class DrumPadLayoutManager:
         self.fl = fl
         self.model = model
         self.channel_selection_manager = channel_selection_manager
-        pad_led_writer = MappedPadLedWriter(
+        self.pad_led_writer = MappedPadLedWriter(
             pad_led_writer, product_defs.Constants.NotesForPadLayout.value[product_defs.PadLayout.Drum]
         )
         self.channel_selection_dependent_views = {
             view.ChannelSelectNameHighlightView(self.action_dispatcher, self.fl, model, channel_selection_manager),
-            view.Default(self.action_dispatcher, pad_led_writer, self.fl, model, channel_selection_manager),
         }
         self.channel_selection_independent_views = {
-            view.AnalogLabPadView(self.action_dispatcher, pad_led_writer, self.fl, channel_selection_manager),
+            view.AnalogLabPadView(self.action_dispatcher, self.pad_led_writer, self.fl, channel_selection_manager),
             view.ChannelSelectView(self.action_dispatcher, button_led_writer, self.fl, product_defs, channel_selection_manager),
         }
+
+        # Track current plugin and channel for dynamic view switching
+        self.selected_channel = None
+        self.selected_plugin = None
+        self.active_instrument_view = None
 
     def show(self):
         self.action_dispatcher.subscribe(self)
@@ -37,6 +43,7 @@ class DrumPadLayoutManager:
             has_selection = self.fl.is_any_channel_selected()
 
         if has_selection:
+            self._handle_channel_selected()
             for global_view in self.channel_selection_dependent_views:
                 global_view.show()
 
@@ -57,6 +64,11 @@ class DrumPadLayoutManager:
         for global_view in self.channel_selection_independent_views:
             global_view.hide()
 
+        # Hide active instrument view
+        if self.active_instrument_view:
+            self.active_instrument_view.hide()
+            self.active_instrument_view = None
+
         self.model.default_instrument_layout.note_offset_for_pad = {}
 
         self.action_dispatcher.unsubscribe(self)
@@ -70,12 +82,62 @@ class DrumPadLayoutManager:
 
         if has_selection:
             if action.flags & RefreshFlags.ChannelSelection.value or action.flags & RefreshFlags.ChannelGroup.value:
+                self._handle_channel_selected()
                 self.action_dispatcher.dispatch(FlGuiChannelSelectAction())
 
     def handle_ChannelSelectionToggleAction(self, action):
         if action.any_channel_selected:
+            self._handle_channel_selected()
             for global_view in self.channel_selection_dependent_views:
                 global_view.show()
         else:
+            # Hide active instrument view when channel is unselected
+            if self.active_instrument_view:
+                self.active_instrument_view.hide()
+                self.active_instrument_view = None
             for global_view in self.channel_selection_dependent_views:
                 global_view.hide()
+
+    def _handle_channel_selected(self):
+        """Handle channel selection and detect plugin changes"""
+        # Determine which channel is selected
+        if self.channel_selection_manager:
+            current_channel = self.channel_selection_manager.get_active_channel()
+        else:
+            current_channel = self.fl.get_selected_global_channel() if self.fl.is_any_channel_selected() else None
+
+        if current_channel is None:
+            return
+
+        # Get the plugin for the selected channel
+        current_plugin = self.fl.get_plugin_for_channel(current_channel)
+
+        # Check if plugin changed
+        if current_channel == self.selected_channel and current_plugin == self.selected_plugin:
+            return
+
+        self.selected_channel = current_channel
+        self.selected_plugin = current_plugin
+        self._handle_plugin_changed()
+
+    def _handle_plugin_changed(self):
+        """Handle plugin change by switching views"""
+        if self.active_instrument_view:
+            self.active_instrument_view.hide()
+
+        self.active_instrument_view = self._create_instrument_view_for_plugin(self.selected_plugin)
+        self.active_instrument_view.show()
+
+    def _create_instrument_view_for_plugin(self, plugin):
+        """Create appropriate view based on detected plugin"""
+        if plugin == InstrumentPlugin.ModoDrum.value:
+            return ModoDrum(
+                self.action_dispatcher,
+                self.pad_led_writer,
+                self.fl,
+                self.model,
+                ModoDrumPadMapping,
+                ModoDrumPadColors if ModoDrumPadColors else None
+            )
+        # Default view for all other plugins
+        return view.Default(self.action_dispatcher, self.pad_led_writer, self.fl, self.model, self.channel_selection_manager)

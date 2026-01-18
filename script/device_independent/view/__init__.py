@@ -47,6 +47,7 @@ from .pattern_select_screen_view import PatternSelectScreenView
 from .pattern_select_view import PatternSelectView
 from .plugin_parameter_screen_view import PluginParameterScreenView
 from .plugin_parameter_view import PluginParameterView
+from .pot_mode_selector_view import PotModeSelectorView
 from .preset_button_screen_view import PresetButtonScreenView
 from .preset_button_view import PresetButtonView
 from .quantise_button_view import QuantiseButtonView
@@ -124,6 +125,7 @@ __all__ = [
     "PatternSelectView",
     "PluginParameterScreenView",
     "PluginParameterView",
+    "PotModeSelectorView",
     "PresetButtonScreenView",
     "PresetButtonView",
     "QuantiseButtonView",

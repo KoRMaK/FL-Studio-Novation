@@ -9,12 +9,13 @@ class PluginParameterScreenView(View):
     channel_selection_flags = RefreshFlags.ChannelSelection.value | RefreshFlags.ChannelGroup.value
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
 
-    def __init__(self, action_dispatcher, fl, screen_writer, plugin_parameters, *, control_to_index):
+    def __init__(self, action_dispatcher, fl, screen_writer, plugin_parameters, *, control_to_index, channel_selection_manager=None):
         super().__init__(action_dispatcher)
         self.fl = fl
         self.screen_writer = screen_writer
         self.plugin_parameters = plugin_parameters
         self.control_to_index = control_to_index
+        self.channel_selection_manager = channel_selection_manager
 
     def _on_show(self):
         self._update_plugin_parameters()
@@ -32,8 +33,24 @@ class PluginParameterScreenView(View):
         if selected_plugin_type == PluginType.Effect and action.flags & self.mixer_track_selection_flags:
             self._update_plugin_parameters()
 
+    def _get_selected_channel(self):
+        """Get the selected channel, using channel_selection_manager if available"""
+        if self.channel_selection_manager:
+            return self.channel_selection_manager.get_active_channel()
+        return None
+
     def _update_plugin_parameters(self):
-        plugin_parameters = self.plugin_parameters.get(self.fl.get_selected_plugin())
+        # Get plugin name based on channel selection
+        if self.channel_selection_manager:
+            channel = self._get_selected_channel()
+            if channel is not None:
+                plugin = self.fl.get_plugin_for_channel(channel)
+            else:
+                plugin = None
+        else:
+            plugin = self.fl.get_selected_plugin()
+
+        plugin_parameters = self.plugin_parameters.get(plugin)
         if plugin_parameters is None:
             self._set_primary_text_for_all_controls("Not Used")
         else:

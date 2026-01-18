@@ -10,6 +10,7 @@ class PadLayout(Enum):
 
 class PotLayout(Enum):
     Volume = 1
+    Plugin = 2
     Pan = 3
 
 

@@ -40,8 +40,10 @@ class Channel:
             return ChannelType(channels.getChannelType(channels.selectedChannel()))
         return ChannelType(channels.getChannelType(group_channel))
 
-    def set_parameter_value(self, parameter, value):
-        rec_event_parameter = parameter + channels.getRecEventId(channels.selectedChannel())
+    def set_parameter_value(self, parameter, value, group_channel=None):
+        if group_channel is None:
+            group_channel = channels.selectedChannel()
+        rec_event_parameter = parameter + channels.getRecEventId(group_channel)
         value = int(value * midi.FromMIDI_Max)
         mask = midi.REC_MIDIController
         general.processRECEvent(rec_event_parameter, value, mask)
@@ -75,10 +77,17 @@ class Plugin:
         parameter_index_midi_note = 1
         return plugins.getPadInfo(group_channel, -1, parameter_index_midi_note, pad_index)
 
-    def set_parameter_value(self, parameter, value):
-        plugins.setParamValue(
-            value, parameter, *self.fl.get_selected_plugin_position(), PickupFollowMode.FollowUserSetting.value
-        )
+    def set_parameter_value(self, parameter, value, group_channel=None):
+        if group_channel is not None:
+            # Use the specified channel
+            plugins.setParamValue(
+                value, parameter, group_channel, -1, PickupFollowMode.FollowUserSetting.value
+            )
+        else:
+            # Use the globally selected plugin
+            plugins.setParamValue(
+                value, parameter, *self.fl.get_selected_plugin_position(), PickupFollowMode.FollowUserSetting.value
+            )
 
 
 class UI:
@@ -204,13 +213,24 @@ class FL:
     def reset_channel_pan_pickup(self, channel):
         channels.setChannelPan(channel, channels.getChannelPan(channel), PickupFollowMode.NoPickup.value)
 
-    def reset_parameter_pickup(self, parameter):
-        plugins.setParamValue(
-            plugins.getParamValue(parameter, *self.get_selected_plugin_position()),
-            parameter,
-            *self.get_selected_plugin_position(),
-            PickupFollowMode.NoPickup.value,
-        )
+    def reset_parameter_pickup(self, parameter, group_channel=None):
+        if group_channel is not None:
+            # Use the specified channel
+            plugins.setParamValue(
+                plugins.getParamValue(parameter, group_channel, -1),
+                parameter,
+                group_channel,
+                -1,
+                PickupFollowMode.NoPickup.value,
+            )
+        else:
+            # Use the globally selected plugin
+            plugins.setParamValue(
+                plugins.getParamValue(parameter, *self.get_selected_plugin_position()),
+                parameter,
+                *self.get_selected_plugin_position(),
+                PickupFollowMode.NoPickup.value,
+            )
 
     def set_channel_volume(self, channel, volume):
         channels.setChannelVolume(channel, volume, PickupFollowMode.FollowUserSetting.value)

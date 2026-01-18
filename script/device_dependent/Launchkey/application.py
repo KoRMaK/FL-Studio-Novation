@@ -3,7 +3,7 @@ from script.device_dependent.common import (
     MixerVolumeFaderLayoutManager,
     MixerVolumePotLayoutManager,
 )
-from script.device_dependent.LaunchkeyRange import DrumPadLayoutManager
+from script.device_dependent.LaunchkeyRange import DrumPadLayoutManager, PluginPotLayoutManager
 from script.device_independent.channel_selection_manager import ChannelSelectionManager
 from script.device_independent.fl_gui.fl_window_manager import FLWindowManager
 from script.device_independent.view import (
@@ -16,6 +16,7 @@ from script.device_independent.view import (
     MixerBankView,
     MixerMasterVolumeView,
     MixerVolumeScreenView,
+    PotModeSelectorView,
     TransportPlayPauseButtonView,
     TransportRecordButtonView,
     TransportStopButtonView,
@@ -80,6 +81,7 @@ class Application:
             ),
             MixerMasterVolumeView(self.action_dispatcher, self.fl),
             MixerVolumeScreenView(self.action_dispatcher, self.screen_writer, self.fl),
+            PotModeSelectorView(self.action_dispatcher, self.pad_led_writer, self.device_manager, self.product_defs, self.model),
             UndoButtonView(self.action_dispatcher, self.fl, self.product_defs),
         }
         for view in self.global_views:
@@ -155,6 +157,13 @@ class Application:
                 self.screen_writer,
                 self.model,
                 self.fl_window_manager,
+            )
+        if layout == self.product_defs.PotLayout.Plugin:
+            return PluginPotLayoutManager(
+                self.action_dispatcher,
+                self.fl,
+                self.screen_writer,
+                self.channel_selection_manager,
             )
         if layout == self.product_defs.PotLayout.Pan:
             return MixerPanPotLayoutManager(

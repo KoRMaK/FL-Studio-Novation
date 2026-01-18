@@ -50,7 +50,10 @@ class PluginParameterScreenView(View):
         else:
             plugin = self.fl.get_selected_plugin()
 
+        print(plugin)
+
         plugin_parameters = self.plugin_parameters.get(plugin)
+        print(plugin_parameters)
         if plugin_parameters is None:
             self._set_primary_text_for_all_controls("Not Used")
         else:

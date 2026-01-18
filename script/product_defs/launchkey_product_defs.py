@@ -9,9 +9,9 @@ class PadLayout(Enum):
 
 
 class PotLayout(Enum):
-    Volume = 1
-    Plugin = 2
-    Pan = 3
+    Plugin = 1  # Left pot mode button - Plugin parameter mappings
+    Volume = 2
+    Pan = 3     # Right pot mode button - Pan control
 
 
 class FaderLayout(Enum):

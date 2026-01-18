@@ -162,7 +162,8 @@ class DrumPadLayoutManager:
                 self.fl,
                 self.model,
                 ModoDrumPadMapping,
-                ModoDrumPadColors if ModoDrumPadColors else None
+                ModoDrumPadColors if ModoDrumPadColors else None,
+                self.channel_selection_manager
             )
         # Default view for all other plugins
         return view.Default(self.action_dispatcher, self.pad_led_writer, self.fl, self.model, self.channel_selection_manager)

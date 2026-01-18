@@ -73,11 +73,21 @@ class Default(View):
     def _send_note_on_for_pad(self, pad, note, velocity):
         self.active_note_for_pad[pad] = note
         self.pad_for_active_note[note] = pad
-        self.fl.send_note_on(note, velocity)
+        # Send note to the independently selected channel if available
+        if self.channel_selection_manager:
+            group_channel = self.channel_selection_manager.get_active_channel()
+            self.fl.send_note_on(note, velocity, group_channel=group_channel)
+        else:
+            self.fl.send_note_on(note, velocity)
 
     def _send_note_off(self, note):
         self.pad_for_active_note.pop(note)
-        self.fl.send_note_off(note)
+        # Send note to the independently selected channel if available
+        if self.channel_selection_manager:
+            group_channel = self.channel_selection_manager.get_active_channel()
+            self.fl.send_note_off(note, group_channel=group_channel)
+        else:
+            self.fl.send_note_off(note)
 
     def handle_DefaultOctaveChangedAction(self, action):
         self._update_all_leds()

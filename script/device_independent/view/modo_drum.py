@@ -14,7 +14,7 @@ class ModoDrum(View):
 
     colour_component_min = 20
 
-    def __init__(self, action_dispatcher, pad_led_writer, fl, model, pad_to_note_mapping=None, pad_color_mapping=None):
+    def __init__(self, action_dispatcher, pad_led_writer, fl, model, pad_to_note_mapping=None, pad_color_mapping=None, channel_selection_manager=None):
         """
         Initialize MODO DRUM view with custom pad mapping.
 
@@ -27,12 +27,14 @@ class ModoDrum(View):
                                 If None, uses default chromatic mapping starting at C1 (36)
             pad_color_mapping: Dict mapping pad index to (R, G, B) tuple
                               If None, tries to read from plugin or uses default orange
+            channel_selection_manager: Optional channel selection manager for independent channel selection
         """
         super().__init__(action_dispatcher)
         self.action_dispatcher = action_dispatcher
         self.fl = fl
         self.pad_led_writer = pad_led_writer
         self.model = model
+        self.channel_selection_manager = channel_selection_manager
 
         # Set up pad-to-note mapping
         if pad_to_note_mapping is None:
@@ -62,6 +64,12 @@ class ModoDrum(View):
         self.colour_for_pad = [None] * 16
         self.supports_banking = len(self.pad_to_note_mapping) > 16
 
+    def _get_selected_channel(self):
+        """Get the selected channel, using channel_selection_manager if available"""
+        if self.channel_selection_manager:
+            return self.channel_selection_manager.get_active_channel()
+        return self.fl.selected_channel()
+
     def _on_show(self):
         print("modo drum page")
         self._update_notes_for_pads()
@@ -73,13 +81,13 @@ class ModoDrum(View):
     def handle_PadPressAction(self, action):
         note = self.note_for_pad[action.pad]
         if note is not None:
-            self.fl.send_note_on(note, action.velocity)
+            self.fl.send_note_on(note, action.velocity, group_channel=self._get_selected_channel())
             self.pad_led_writer.set_pad_colour(action.pad, Colours.button_pressed)
 
     def handle_PadReleaseAction(self, action):
         note = self.note_for_pad[action.pad]
         if note is not None:
-            self.fl.send_note_off(note)
+            self.fl.send_note_off(note, group_channel=self._get_selected_channel())
             self.pad_led_writer.set_pad_colour(action.pad, self.colour_for_pad[action.pad])
 
     def handle_FpcBankAction(self, action):
@@ -130,7 +138,7 @@ class ModoDrum(View):
         try:
             note = self.note_for_pad[pad]
             if note is not None:
-                r, g, b = self.fl.plugin.get_colour(self.fl.selected_channel(), note)
+                r, g, b = self.fl.plugin.get_colour(self._get_selected_channel(), note)
                 return (
                     max(self.colour_component_min, r),
                     max(self.colour_component_min, g),

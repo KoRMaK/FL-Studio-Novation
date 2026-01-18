@@ -1,7 +1,7 @@
 from script.actions import FlGuiChannelSelectAction
 from script.constants import ModoDrumPadMapping, ModoDrumPadColors
 from script.device_independent import view
-from script.device_independent.view import ModoDrum
+from script.device_independent.view import Fpc, FpcBankView, ModoDrum
 from script.fl_constants import InstrumentPlugin, RefreshFlags
 from util.mapped_pad_led_writer import MappedPadLedWriter
 
@@ -9,7 +9,9 @@ from util.mapped_pad_led_writer import MappedPadLedWriter
 class DrumPadLayoutManager:
     def __init__(self, action_dispatcher, pad_led_writer, button_led_writer, fl, product_defs, model, channel_selection_manager=None):
         self.action_dispatcher = action_dispatcher
+        self.button_led_writer = button_led_writer
         self.fl = fl
+        self.product_defs = product_defs
         self.model = model
         self.channel_selection_manager = channel_selection_manager
         self.pad_led_writer = MappedPadLedWriter(
@@ -27,6 +29,7 @@ class DrumPadLayoutManager:
         self.selected_channel = None
         self.selected_plugin = None
         self.active_instrument_view = None
+        self.active_plugin_bank_view = None
 
     def show(self):
         self.action_dispatcher.subscribe(self)
@@ -69,6 +72,11 @@ class DrumPadLayoutManager:
             self.active_instrument_view.hide()
             self.active_instrument_view = None
 
+        # Hide active bank view
+        if self.active_plugin_bank_view:
+            self.active_plugin_bank_view.hide()
+            self.active_plugin_bank_view = None
+
         self.model.default_instrument_layout.note_offset_for_pad = {}
 
         self.action_dispatcher.unsubscribe(self)
@@ -95,6 +103,10 @@ class DrumPadLayoutManager:
             if self.active_instrument_view:
                 self.active_instrument_view.hide()
                 self.active_instrument_view = None
+            # Hide active bank view when channel is unselected
+            if self.active_plugin_bank_view:
+                self.active_plugin_bank_view.hide()
+                self.active_plugin_bank_view = None
             for global_view in self.channel_selection_dependent_views:
                 global_view.hide()
 
@@ -124,12 +136,25 @@ class DrumPadLayoutManager:
         """Handle plugin change by switching views"""
         if self.active_instrument_view:
             self.active_instrument_view.hide()
+        if self.active_plugin_bank_view:
+            self.active_plugin_bank_view.hide()
 
         self.active_instrument_view = self._create_instrument_view_for_plugin(self.selected_plugin)
         self.active_instrument_view.show()
 
+        self.active_plugin_bank_view = self._create_bank_view_for_plugin(self.selected_plugin)
+        self.active_plugin_bank_view.show()
+
     def _create_instrument_view_for_plugin(self, plugin):
         """Create appropriate view based on detected plugin"""
+        if plugin == InstrumentPlugin.Fpc.value:
+            return Fpc(
+                self.action_dispatcher,
+                self.pad_led_writer,
+                self.fl,
+                self.model,
+                self.channel_selection_manager
+            )
         if plugin == InstrumentPlugin.ModoDrum.value:
             return ModoDrum(
                 self.action_dispatcher,
@@ -141,3 +166,12 @@ class DrumPadLayoutManager:
             )
         # Default view for all other plugins
         return view.Default(self.action_dispatcher, self.pad_led_writer, self.fl, self.model, self.channel_selection_manager)
+
+    def _create_bank_view_for_plugin(self, plugin):
+        """Create appropriate bank view based on detected plugin"""
+        if plugin == InstrumentPlugin.Fpc.value:
+            return FpcBankView(self.action_dispatcher, self.button_led_writer, self.product_defs, self.model)
+        if plugin == InstrumentPlugin.ModoDrum.value:
+            return FpcBankView(self.action_dispatcher, self.button_led_writer, self.product_defs, self.model)
+        # Default bank view for all other plugins
+        return view.DefaultBankView(self.action_dispatcher, self.button_led_writer, self.product_defs, self.model)

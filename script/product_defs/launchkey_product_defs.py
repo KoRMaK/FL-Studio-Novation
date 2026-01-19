@@ -9,9 +9,9 @@ class PadLayout(Enum):
 
 
 class PotLayout(Enum):
-    Plugin = 1  # Left pot mode button - Plugin parameter mappings
-    Volume = 2
-    Pan = 3     # Right pot mode button - Pan control
+    Volume = 1  # Left pot mode button - Mixer Volume
+    Plugin = 2  # Activated by Shift+Pad 1 (Device pad)
+    Pan = 3     # Right pot mode button - Mixer Pan
 
 
 class FaderLayout(Enum):
@@ -38,6 +38,7 @@ class Constants(Enum):
 
 
 class Button(Enum):
+    Shift = 0
     MixerLeft = 1
     MixerRight = 2
     ChannelRackUp = 3
@@ -59,6 +60,7 @@ class SurfaceEvent(Enum):
     PotLast = 0xBF, 0x22
     FaderFirst = 0xBF, 0x35
     FaderLast = 0xBF, 0x3D
+    ButtonShift = 0xBF, 0x6C  # Shift button
     ButtonMixerRight = 0xBF, 0x66
     ButtonMixerLeft = 0xBF, 0x67
     ButtonTransportPlay = 0xBF, 0x73
@@ -71,6 +73,7 @@ class SurfaceEvent(Enum):
 
 
 FunctionToButton = {
+    "ShiftModifier": Button.Shift,
     "MixerBankRight": Button.MixerRight,
     "MixerBankLeft": Button.MixerLeft,
     "SelectPreviousChannel": Button.ChannelRackUp,
@@ -112,7 +115,7 @@ class LaunchkeyProductDefs:
         self.ControlIndexToFaderIndex = {v: k for k, v in self.FaderIndexToControlIndex.items()}
 
     def IsShiftButton(self, button):
-        return False
+        return button == Button.Shift
 
     def ForwardButtonLedGivenShift(self, button, shift_pressed):
         return True

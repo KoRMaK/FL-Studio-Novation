@@ -21,7 +21,6 @@ class DrumPadLayoutManager:
             view.ChannelSelectNameHighlightView(self.action_dispatcher, self.fl, model, channel_selection_manager),
         }
         self.channel_selection_independent_views = {
-            view.AnalogLabPadView(self.action_dispatcher, self.pad_led_writer, self.fl, channel_selection_manager),
             view.ChannelSelectView(self.action_dispatcher, button_led_writer, self.fl, product_defs, channel_selection_manager),
         }
 

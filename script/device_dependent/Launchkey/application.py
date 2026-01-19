@@ -1,6 +1,7 @@
 from script.device_dependent.common import (
     MixerPanPotLayoutManager,
     MixerVolumeFaderLayoutManager,
+    MixerVolumePotLayoutManager,
 )
 from script.device_dependent.LaunchkeyRange import DrumPadLayoutManager, PluginPotLayoutManager
 from script.device_independent.channel_selection_manager import ChannelSelectionManager
@@ -15,6 +16,7 @@ from script.device_independent.view import (
     MixerBankView,
     MixerMasterVolumeView,
     MixerVolumeScreenView,
+    PotModeSelectorView,
     TransportPlayPauseButtonView,
     TransportRecordButtonView,
     TransportStopButtonView,
@@ -79,10 +81,19 @@ class Application:
             ),
             MixerMasterVolumeView(self.action_dispatcher, self.fl),
             MixerVolumeScreenView(self.action_dispatcher, self.screen_writer, self.fl),
+            PotModeSelectorView(self.action_dispatcher, self.pad_led_writer, self.device_manager, self.product_defs, self.model),
             UndoButtonView(self.action_dispatcher, self.fl, self.product_defs),
         }
         for view in self.global_views:
             view.show()
+
+    def handle_ButtonPressedAction(self, action):
+        if action.button == self.product_defs.FunctionToButton.get("ShiftModifier"):
+            self.button_led_writer.shift_modifier_pressed()
+
+    def handle_ButtonReleasedAction(self, action):
+        if action.button == self.product_defs.FunctionToButton.get("ShiftModifier"):
+            self.button_led_writer.shift_modifier_released()
 
     def deinit(self):
         if self.active_pot_layout_manager:
@@ -100,7 +111,7 @@ class Application:
         self.action_dispatcher.unsubscribe(self)
 
     def _select_pan_pot_layout(self):
-        self.device_manager.select_pot_layout(self.product_defs.PotLayout.Plugin.value)
+        self.device_manager.select_pot_layout(self.product_defs.PotLayout.Volume.value)
 
     def handle_PadLayoutChangedAction(self, action):
         if self.active_pad_layout_manager:
@@ -146,6 +157,15 @@ class Application:
         return None
 
     def _create_pot_layout_manager(self, layout):
+        if layout == self.product_defs.PotLayout.Volume:
+            return MixerVolumePotLayoutManager(
+                self.action_dispatcher,
+                self.command_dispatcher,
+                self.fl,
+                self.screen_writer,
+                self.model,
+                self.fl_window_manager,
+            )
         if layout == self.product_defs.PotLayout.Plugin:
             return PluginPotLayoutManager(
                 self.action_dispatcher,

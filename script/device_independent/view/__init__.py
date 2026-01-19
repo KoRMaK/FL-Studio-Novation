@@ -1,4 +1,3 @@
-from .analog_lab_pad_view import AnalogLabPadView
 from .analog_lab_preset_button_view import AnalogLabPresetButtonView
 from .button_function_screen_view import ButtonFunctionScreenView
 from .channel_bank_controls_highlight_view import ChannelBankControlsHighlightView
@@ -47,6 +46,7 @@ from .pattern_select_screen_view import PatternSelectScreenView
 from .pattern_select_view import PatternSelectView
 from .plugin_parameter_screen_view import PluginParameterScreenView
 from .plugin_parameter_view import PluginParameterView
+from .pot_mode_selector_view import PotModeSelectorView
 from .preset_button_screen_view import PresetButtonScreenView
 from .preset_button_view import PresetButtonView
 from .quantise_button_view import QuantiseButtonView
@@ -74,7 +74,6 @@ from .transport_stop_button_view import TransportStopButtonView
 from .undo_button_view import UndoButtonView
 
 __all__ = [
-    "AnalogLabPadView",
     "AnalogLabPresetButtonView",
     "ButtonFunctionScreenView",
     "ChannelBankControlsHighlightView",
@@ -124,6 +123,7 @@ __all__ = [
     "PatternSelectView",
     "PluginParameterScreenView",
     "PluginParameterView",
+    "PotModeSelectorView",
     "PresetButtonScreenView",
     "PresetButtonView",
     "QuantiseButtonView",

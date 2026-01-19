@@ -282,7 +282,14 @@ class Application:
                 self.action_dispatcher, self.fl, self.screen_writer, self.model, self.fl_window_manager
             )
         if layout == self.product_defs.PotLayout.Plugin:
-            return PluginPotLayoutManager(self.action_dispatcher, self.fl, self.screen_writer)
+            return PluginPotLayoutManager(
+                self.action_dispatcher,
+                self.fl,
+                self.screen_writer,
+                self.model,
+                self.product_defs,
+                self.button_led_writer,
+            )
         if layout == self.product_defs.PotLayout.Momentary:
             return MomentaryPotLayoutManager(self.action_dispatcher, self.fl, self.model)
         return None

@@ -183,10 +183,15 @@ class PluginParameterView(View):
         if not self.product_defs or not self.model:
             return
 
-        # Handle page navigation with mixer bank buttons
-        if action.button == self.product_defs.FunctionToButton.get("MixerBankLeft"):
+        # Handle page navigation - support both MixerBank buttons (Launchkey) and Page buttons (FL Key)
+        mixer_bank_left = self.product_defs.FunctionToButton.get("MixerBankLeft")
+        mixer_bank_right = self.product_defs.FunctionToButton.get("MixerBankRight")
+        page_left = self.product_defs.FunctionToButton.get("ChannelPluginPageLeft")
+        page_right = self.product_defs.FunctionToButton.get("ChannelPluginPageRight")
+
+        if action.button in (mixer_bank_left, page_left):
             self._navigate_to_previous_page()
-        elif action.button == self.product_defs.FunctionToButton.get("MixerBankRight"):
+        elif action.button in (mixer_bank_right, page_right):
             self._navigate_to_next_page()
 
     def _navigate_to_previous_page(self):
@@ -210,36 +215,40 @@ class PluginParameterView(View):
         self.action_dispatcher.dispatch(PluginParameterPageChangedAction())
 
     def _update_page_button_leds(self):
-        """Update mixer bank button LEDs to indicate page availability"""
+        """Update page navigation button LEDs to indicate page availability"""
         if not self.button_led_writer or not self.product_defs or not self.model:
             return
 
         from script.colours import Colours
 
-        # Previous page button (left)
-        prev_available = self.model.plugin_parameter_active_page > 0
-        prev_colour = Colours.available if prev_available else Colours.off
-        self.button_led_writer.set_button_colour(
-            self.product_defs.FunctionToButton.get("MixerBankLeft"), prev_colour
-        )
+        # Get button mappings (Launchkey uses MixerBank buttons, FL Key uses Page buttons)
+        left_button = self.product_defs.FunctionToButton.get("MixerBankLeft") or self.product_defs.FunctionToButton.get("ChannelPluginPageLeft")
+        right_button = self.product_defs.FunctionToButton.get("MixerBankRight") or self.product_defs.FunctionToButton.get("ChannelPluginPageRight")
 
-        # Next page button (right)
-        next_available = self.model.plugin_parameter_active_page < self.total_pages - 1
-        next_colour = Colours.available if next_available else Colours.off
-        self.button_led_writer.set_button_colour(
-            self.product_defs.FunctionToButton.get("MixerBankRight"), next_colour
-        )
+        if left_button:
+            # Previous page button (left)
+            prev_available = self.model.plugin_parameter_active_page > 0
+            prev_colour = Colours.available if prev_available else Colours.off
+            self.button_led_writer.set_button_colour(left_button, prev_colour)
+
+        if right_button:
+            # Next page button (right)
+            next_available = self.model.plugin_parameter_active_page < self.total_pages - 1
+            next_colour = Colours.available if next_available else Colours.off
+            self.button_led_writer.set_button_colour(right_button, next_colour)
 
     def _turn_off_page_button_leds(self):
-        """Turn off mixer bank button LEDs"""
+        """Turn off page navigation button LEDs"""
         if not self.button_led_writer or not self.product_defs:
             return
 
         from script.colours import Colours
 
-        self.button_led_writer.set_button_colour(
-            self.product_defs.FunctionToButton.get("MixerBankLeft"), Colours.off
-        )
-        self.button_led_writer.set_button_colour(
-            self.product_defs.FunctionToButton.get("MixerBankRight"), Colours.off
-        )
+        # Get button mappings (Launchkey uses MixerBank buttons, FL Key uses Page buttons)
+        left_button = self.product_defs.FunctionToButton.get("MixerBankLeft") or self.product_defs.FunctionToButton.get("ChannelPluginPageLeft")
+        right_button = self.product_defs.FunctionToButton.get("MixerBankRight") or self.product_defs.FunctionToButton.get("ChannelPluginPageRight")
+
+        if left_button:
+            self.button_led_writer.set_button_colour(left_button, Colours.off)
+        if right_button:
+            self.button_led_writer.set_button_colour(right_button, Colours.off)

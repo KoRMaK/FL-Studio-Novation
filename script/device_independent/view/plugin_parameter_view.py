@@ -41,11 +41,19 @@ class PluginParameterView(View):
         if not action.flags & (self.channel_selection_flags | self.mixer_track_selection_flags):
             return
 
-        selected_plugin_type = self.fl.get_selected_plugin_type()
-        if selected_plugin_type == PluginType.Instrument and action.flags & self.channel_selection_flags:
-            self._update_plugin_parameters()
-        if selected_plugin_type == PluginType.Effect and action.flags & self.mixer_track_selection_flags:
-            self._update_plugin_parameters()
+        # When using independent channel selection, check the Launchkey's selected channel
+        if self.channel_selection_manager:
+            channel = self._get_selected_channel()
+            if channel is not None and action.flags & self.channel_selection_flags:
+                # Update when the Launchkey's selected channel changes
+                self._update_plugin_parameters()
+        else:
+            # Legacy behavior: use global FL Studio selection
+            selected_plugin_type = self.fl.get_selected_plugin_type()
+            if selected_plugin_type == PluginType.Instrument and action.flags & self.channel_selection_flags:
+                self._update_plugin_parameters()
+            if selected_plugin_type == PluginType.Effect and action.flags & self.mixer_track_selection_flags:
+                self._update_plugin_parameters()
 
     def _get_selected_channel(self):
         """Get the selected channel, using channel_selection_manager if available"""

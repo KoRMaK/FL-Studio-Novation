@@ -23,15 +23,26 @@ class PluginParameterScreenView(View):
     def _on_hide(self):
         self._set_primary_text_for_all_controls("")
 
+    def handle_ChannelSelectAction(self, action):
+        self._update_plugin_parameters()
+
     def handle_OnRefreshAction(self, action):
         if not action.flags & (self.channel_selection_flags | self.mixer_track_selection_flags):
             return
 
-        selected_plugin_type = self.fl.get_selected_plugin_type()
-        if selected_plugin_type == PluginType.Instrument and action.flags & self.channel_selection_flags:
-            self._update_plugin_parameters()
-        if selected_plugin_type == PluginType.Effect and action.flags & self.mixer_track_selection_flags:
-            self._update_plugin_parameters()
+        # When using independent channel selection, check the Launchkey's selected channel
+        if self.channel_selection_manager:
+            channel = self._get_selected_channel()
+            if channel is not None and action.flags & self.channel_selection_flags:
+                # Update when the Launchkey's selected channel changes
+                self._update_plugin_parameters()
+        else:
+            # Legacy behavior: use global FL Studio selection
+            selected_plugin_type = self.fl.get_selected_plugin_type()
+            if selected_plugin_type == PluginType.Instrument and action.flags & self.channel_selection_flags:
+                self._update_plugin_parameters()
+            if selected_plugin_type == PluginType.Effect and action.flags & self.mixer_track_selection_flags:
+                self._update_plugin_parameters()
 
     def _get_selected_channel(self):
         """Get the selected channel, using channel_selection_manager if available"""
@@ -50,10 +61,7 @@ class PluginParameterScreenView(View):
         else:
             plugin = self.fl.get_selected_plugin()
 
-        print(plugin)
-
         plugin_parameters = self.plugin_parameters.get(plugin)
-        print(plugin_parameters)
         if plugin_parameters is None:
             self._set_primary_text_for_all_controls("Not Used")
         else:
@@ -72,7 +80,10 @@ class PluginParameterScreenView(View):
         if parameter is None:
             return "Not Used", "-"
 
-        name = self.fl.get_parameter_name(parameter.index) if parameter.name is None else parameter.name
+        # Get the channel to use (if using independent selection)
+        channel = self._get_selected_channel() if self.channel_selection_manager else None
+
+        name = self.fl.get_parameter_name(parameter.index, group_channel=channel) if parameter.name is None else parameter.name
 
         if parameter.discrete_regions:
             value = self._get_region_name_for_value(parameter.discrete_regions, action_value)
@@ -81,8 +92,8 @@ class PluginParameterScreenView(View):
             value = self._normalised_value_to_percentage_string(action_value, minimum=minimum, maximum=maximum)
         else:
             value = self.fl.get_parameter_value_as_string(
-                parameter.index
-            ) or self._normalised_value_to_percentage_string(self.fl.get_parameter_value(parameter.index))
+                parameter.index, group_channel=channel
+            ) or self._normalised_value_to_percentage_string(self.fl.get_parameter_value(parameter.index, group_channel=channel))
 
         return name, value
 

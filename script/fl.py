@@ -633,13 +633,19 @@ class FL:
     def dump_score_log(self, duration_seconds):
         general.dumpScoreLog(duration_seconds, 1)
 
-    def get_parameter_name(self, parameter):
+    def get_parameter_name(self, parameter, group_channel=None):
+        if group_channel is not None:
+            return plugins.getParamName(parameter, group_channel, -1)
         return plugins.getParamName(parameter, *self.get_selected_plugin_position())
 
-    def get_parameter_value(self, parameter):
+    def get_parameter_value(self, parameter, group_channel=None):
+        if group_channel is not None:
+            return plugins.getParamValue(parameter, group_channel, -1)
         return plugins.getParamValue(parameter, *self.get_selected_plugin_position())
 
-    def get_parameter_value_as_string(self, parameter):
+    def get_parameter_value_as_string(self, parameter, group_channel=None):
+        if group_channel is not None:
+            return plugins.getParamValueString(parameter, group_channel, -1)
         return plugins.getParamValueString(parameter, *self.get_selected_plugin_position())
 
     def send_tap_tempo_event(self):

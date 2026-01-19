@@ -522,14 +522,14 @@ user_defined_plugin_mappings = {
             #Arturia Moog v4:
             "plugin_name": "Mini V4",
             "parameters": [
-                {"parameter_index": 1},
-                {"parameter_index": 2},
-                {"parameter_index": 3},
-                {"parameter_index": 4},
-                {"parameter_index": 5},
-                {"parameter_index": 6},
-                {"parameter_index": 7},
-                {"parameter_index": 8},
+                {"parameter_index": 17},
+                {"parameter_index": 18},
+                {"parameter_index": 19},
+                {"parameter_index": 20},
+                {"parameter_index": 21},
+                {"parameter_index": 22},
+                {"parameter_index": 23},
+                {"parameter_index": 24},
            ],
         },
         {

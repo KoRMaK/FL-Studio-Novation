@@ -111,7 +111,7 @@ class Application:
         self.action_dispatcher.unsubscribe(self)
 
     def _select_pan_pot_layout(self):
-        self.device_manager.select_pot_layout(self.product_defs.PotLayout.Volume.value)
+        self.device_manager.select_pot_layout(self.product_defs.PotLayout.Plugin.value)
 
     def handle_PadLayoutChangedAction(self, action):
         if self.active_pad_layout_manager:

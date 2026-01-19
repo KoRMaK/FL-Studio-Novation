@@ -17,7 +17,7 @@ class PotModeSelectorView(View):
         self.product_defs = product_defs
         self.model = model
         self.shift_pressed = False  # Shift button state
-        self.plugin_mode_active = False  # Track if Plugin mode is active
+        self.plugin_mode_active = True  # Track if Plugin mode is active (starts in Plugin mode)
 
     def _on_show(self):
         # Initialize - update LED based on current mode

@@ -172,6 +172,10 @@ class Application:
                 self.fl,
                 self.screen_writer,
                 self.channel_selection_manager,
+                self.model,
+                self.product_defs,
+                self.button_led_writer,
+                self.command_dispatcher,
             )
         if layout == self.product_defs.PotLayout.Pan:
             return MixerPanPotLayoutManager(

@@ -245,3 +245,8 @@ class PatternSelectBankChangeAttemptedAction:
 @PlainData
 class PatternSelectedAction:
     method: PatternSelectionMethod
+
+
+@PlainData
+class PluginParameterPageChangedAction:
+    pass

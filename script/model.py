@@ -58,3 +58,6 @@ class Model:
         self.pattern_select_active_bank = 0
 
         self.show_all_highlights_active = False
+
+        # Plugin parameter pagination
+        self.plugin_parameter_active_page = 0

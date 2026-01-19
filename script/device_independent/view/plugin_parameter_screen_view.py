@@ -9,13 +9,15 @@ class PluginParameterScreenView(View):
     channel_selection_flags = RefreshFlags.ChannelSelection.value | RefreshFlags.ChannelGroup.value
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
 
-    def __init__(self, action_dispatcher, fl, screen_writer, plugin_parameters, *, control_to_index, channel_selection_manager=None):
+    def __init__(self, action_dispatcher, fl, screen_writer, plugin_parameters, *, control_to_index, channel_selection_manager=None, model=None):
         super().__init__(action_dispatcher)
         self.fl = fl
         self.screen_writer = screen_writer
         self.plugin_parameters = plugin_parameters
         self.control_to_index = control_to_index
         self.channel_selection_manager = channel_selection_manager
+        self.model = model
+        self.all_parameters = []  # Store all available parameters for current plugin
 
     def _on_show(self):
         self._update_plugin_parameters()
@@ -24,6 +26,12 @@ class PluginParameterScreenView(View):
         self._set_primary_text_for_all_controls("")
 
     def handle_ChannelSelectAction(self, action):
+        self._update_plugin_parameters()
+
+    def handle_PluginParameterPageChangedAction(self, action):
+        self._update_plugin_parameters()
+
+    def handle_PresetChangedAction(self, action):
         self._update_plugin_parameters()
 
     def handle_OnRefreshAction(self, action):
@@ -63,10 +71,24 @@ class PluginParameterScreenView(View):
 
         plugin_parameters = self.plugin_parameters.get(plugin)
         if plugin_parameters is None:
+            self.all_parameters = []
             self._set_primary_text_for_all_controls("Not Used")
         else:
+            # Store all parameters for pagination
+            self.all_parameters = plugin_parameters
+
+            # Calculate pagination
+            num_controls = len(self.control_to_index)
+            current_page = self.model.plugin_parameter_active_page if self.model else 0
+
+            # Slice parameters for current page
+            start_index = current_page * num_controls
+            end_index = start_index + num_controls
+
             for control, index in self.control_to_index.items():
-                if index >= len(plugin_parameters) or plugin_parameters[index] is None:
+                # Map control index to paginated parameter index
+                paginated_index = start_index + index
+                if paginated_index >= len(plugin_parameters) or plugin_parameters[paginated_index] is None:
                     self._set_primary_text_for_control(control, "Not Used")
 
     def _set_primary_text_for_control(self, control, text):

@@ -55,6 +55,12 @@ class PluginParameterView(View):
         self.reset_pickup_on_first_movement = True
         self._update_page_button_leds()
 
+    def handle_PluginParameterPageChangedAction(self, action):
+        # Update parameters when page changed externally (e.g., from pad press)
+        self._update_plugin_parameters()
+        self.reset_pickup_on_first_movement = True
+        self._update_page_button_leds()
+
     def handle_OnRefreshAction(self, action):
         if not action.flags & (self.channel_selection_flags | self.mixer_track_selection_flags):
             return

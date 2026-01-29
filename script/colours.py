@@ -19,6 +19,9 @@ class Colours(Enum):
     mixer_track_audible = 25
     mixer_track_suspended = 27
     pattern_selected = 3
+    plugin_page_indicator = scale_colour((0, 100, 255), 0.2)  # Deep blue for plugin page indicators
+    plugin_page_indicator_active = scale_colour((0, 120, 255), 0.75)  # Slightly brighter blue for active page
+    plugin_page_indicator_pressed = scale_colour((0, 255, 200), 0.8)  # Teal/aqua for pressed page indicator
     step_pitch_step_latched = scale_colour((211, 255, 151), 1.0)
     step_pitch_step_on = scale_colour((175, 225, 120), 0.30)
     step_pitch_step_off = scale_colour((175, 225, 120), 0.05)

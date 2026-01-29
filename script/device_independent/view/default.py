@@ -1,8 +1,9 @@
 from script.colour_utils import clamp_brightness
 from script.colours import Colours
-from script.constants import Pads
+from script.constants import Pads, Pots
 from script.device_independent.util_view.view import View
 from script.fl_constants import RefreshFlags
+from script.plugin import plugin_parameter_mappings
 
 
 class Default(View):
@@ -26,6 +27,7 @@ class Default(View):
         self.pad_led_writer = pad_led_writer
         self.colour_primary = Colours.off
         self.colour_secondary = Colours.off
+        self.pressed_page_indicator_pads = set()  # Track which page indicator pads are pressed
 
     def _is_analog_lab_selected(self):
         """Check if Analog Lab V is the currently selected plugin"""
@@ -108,14 +110,69 @@ class Default(View):
     def _on_hide(self):
         self._turn_off_all_leds()
 
+    def _calculate_num_pot_pages(self):
+        """
+        Calculate number of plugin parameter pages for the currently selected channel.
+        Returns number of pages where each page contains up to 8 pot parameters.
+        Page indicators show on TOP row (pads 0-7).
+        """
+        if self.channel_selection_manager:
+            channel = self.channel_selection_manager.get_active_channel()
+        else:
+            channel = self.fl.selected_channel()
+
+        if channel is None:
+            return 0
+
+        plugin = self.fl.get_plugin_for_channel(channel)
+        if plugin is None or plugin not in plugin_parameter_mappings:
+            return 0
+
+        all_parameters = plugin_parameter_mappings[plugin]
+        if not all_parameters:
+            return 0
+
+        # Calculate pages based on 8 pots per page
+        num_controls = Pots.Num.value
+        num_pages = (len(all_parameters) + num_controls - 1) // num_controls
+
+        return num_pages
+
     def _update_all_leds(self):
         # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
         if self._is_analog_lab_selected():
             return
 
-        for pad in range(Pads.Num.value):
-            colour = self._colour_for_pad(pad)
-            self.pad_led_writer.set_pad_colour(pad, colour)
+        num_pages = self._calculate_num_pot_pages()
+
+        # If plugin has pot pages, show ONLY page indicators (turn off instrument layout)
+        if num_pages > 0:
+            # Turn off all pads first
+            for pad in range(Pads.Num.value):
+                self.pad_led_writer.set_pad_colour(pad, Colours.off.value)
+
+            # Get current active page
+            current_page = self.model.plugin_parameter_active_page if self.model else 0
+
+            # Light up page indicator pads on TOP row (pads 0-7)
+            for pad in range(min(8, Pads.Num.value)):
+                if pad < num_pages:
+                    # Choose color based on state
+                    if pad in self.pressed_page_indicator_pads:
+                        # Pressed - show teal/aqua
+                        colour = Colours.plugin_page_indicator_pressed.value
+                    elif pad == current_page:
+                        # Active page - slightly brighter blue
+                        colour = Colours.plugin_page_indicator_active.value
+                    else:
+                        # Inactive page - normal blue
+                        colour = Colours.plugin_page_indicator.value
+                    self.pad_led_writer.set_pad_colour(pad, colour)
+        else:
+            # No pot pages - show normal instrument layout
+            for pad in range(Pads.Num.value):
+                colour = self._colour_for_pad(pad)
+                self.pad_led_writer.set_pad_colour(pad, colour)
 
     def _turn_off_all_leds(self):
         for pad in range(Pads.Num.value):
@@ -126,18 +183,48 @@ class Default(View):
         if self._is_analog_lab_selected():
             return
 
-        note = self._note_value_for_pad(action.pad)
-        if not self._note_is_valid(note):
-            return
+        num_pages = self._calculate_num_pot_pages()
 
-        self._send_note_on_for_pad(action.pad, note, action.velocity)
-        self._update_all_leds()
+        # If plugin has pot pages and this is a page indicator pad on TOP row (pads 0-7), switch page
+        if num_pages > 0 and action.pad < 8 and action.pad < num_pages:
+            # Mark pad as pressed for visual feedback (teal/aqua color)
+            self.pressed_page_indicator_pads.add(action.pad)
+
+            # Switch to the pressed page (pad 0 = page 0, pad 1 = page 1, etc.)
+            if self.model:
+                self.model.plugin_parameter_active_page = action.pad
+                print(f"Default view: Switched to pot parameter page {action.pad}")
+                # Dispatch an action to notify PluginParameterView to update
+                from script.actions import PluginParameterPageChangedAction
+                self.action_dispatcher.dispatch(PluginParameterPageChangedAction())
+
+            # Update LEDs to show pressed state
+            self._update_all_leds()
+            return  # Don't send MIDI note
+
+        # If no pot pages, use normal instrument layout
+        if num_pages == 0:
+            note = self._note_value_for_pad(action.pad)
+            if not self._note_is_valid(note):
+                return
+
+            self._send_note_on_for_pad(action.pad, note, action.velocity)
+            self._update_all_leds()
 
     def handle_PadReleaseAction(self, action):
         # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
         if self._is_analog_lab_selected():
             return
 
+        num_pages = self._calculate_num_pot_pages()
+
+        # If this is a page indicator pad, remove pressed state and update LEDs
+        if num_pages > 0 and action.pad < 8:
+            self.pressed_page_indicator_pads.discard(action.pad)
+            self._update_all_leds()
+            return
+
+        # Normal instrument layout behavior
         note_for_pad = self.active_note_for_pad.pop(action.pad, None)
         if note_for_pad is not None:
             if self._pad_is_responsible_for_note_off(action.pad, note_for_pad):

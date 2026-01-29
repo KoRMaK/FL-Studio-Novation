@@ -146,7 +146,10 @@ class DrumPadLayoutManager:
 
     def _create_instrument_view_for_plugin(self, plugin):
         """Create appropriate view based on detected plugin"""
+        print(f"DrumPadLayoutManager: Creating view for plugin = '{plugin}'")
+
         if plugin == InstrumentPlugin.Fpc.value:
+            print(f"DrumPadLayoutManager: Detected FPC, creating FPC view")
             return Fpc(
                 self.action_dispatcher,
                 self.pad_led_writer,
@@ -155,6 +158,7 @@ class DrumPadLayoutManager:
                 self.channel_selection_manager
             )
         if plugin == InstrumentPlugin.ModoDrum.value:
+            print(f"DrumPadLayoutManager: Detected ModoDrum, creating ModoDrum view")
             return ModoDrum(
                 self.action_dispatcher,
                 self.pad_led_writer,
@@ -165,6 +169,7 @@ class DrumPadLayoutManager:
                 self.channel_selection_manager
             )
         # Default view for all other plugins
+        print(f"DrumPadLayoutManager: Using Default view for plugin '{plugin}'")
         return view.Default(self.action_dispatcher, self.pad_led_writer, self.fl, self.model, self.channel_selection_manager)
 
     def _create_bank_view_for_plugin(self, plugin):

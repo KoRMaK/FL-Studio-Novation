@@ -4,6 +4,8 @@ from script.fl_constants import RefreshFlags
 
 
 class ChannelSelectView(View):
+    ARTURIA_STYLE_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V", "SEM V3"]
+
     def __init__(self, action_dispatcher, surface, fl, product_defs, channel_selection_manager=None):
         super().__init__(action_dispatcher)
         self.fl = fl
@@ -19,6 +21,13 @@ class ChannelSelectView(View):
             on_page_change_attempted=self._on_page_change_attempted,
         )
         self.action_dispatcher = action_dispatcher
+
+    def _is_analog_lab_selected(self):
+        """Check if an Arturia-style plugin is the currently selected plugin"""
+        selected_plugin = self.fl.get_selected_plugin()
+        if selected_plugin is None:
+            return False
+        return any(name in selected_plugin for name in self.ARTURIA_STYLE_PLUGIN_NAMES)
 
     def _on_show(self):
         self._handle_channel_selection_changed()

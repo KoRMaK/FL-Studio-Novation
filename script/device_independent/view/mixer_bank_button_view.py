@@ -8,7 +8,7 @@ from script.fl_constants import DockSide
 class MixerBankButtonView(View):
     tracks_per_bank = Pots.Num.value
     first_mixer_track_index = 1
-    ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
+    ARTURIA_STYLE_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V", "SEM V3"]
 
     def __init__(self, action_dispatcher, button_led_writer, fl, product_defs, model):
         super().__init__(action_dispatcher)
@@ -27,11 +27,11 @@ class MixerBankButtonView(View):
         )
 
     def _is_analog_lab_selected(self):
-        """Check if Analog Lab V is the currently selected plugin"""
+        """Check if an Arturia-style plugin is the currently selected plugin"""
         selected_plugin = self.fl.get_selected_plugin()
         if selected_plugin is None:
             return False
-        return any(name in selected_plugin for name in self.ANALOG_LAB_PLUGIN_NAMES)
+        return any(name in selected_plugin for name in self.ARTURIA_STYLE_PLUGIN_NAMES)
 
     def _on_show(self):
         # Skip mixer banking if Analog Lab V is selected

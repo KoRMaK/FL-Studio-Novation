@@ -11,14 +11,16 @@ except ImportError:
 
 class AnalogLabPresetButtonView(View):
     """
-    Handles preset navigation for Arturia Analog Lab V using MIDI CC messages.
-    - CC #28 for Previous Preset
-    - CC #29 for Next Preset
+    Handles preset navigation for Arturia plugins (Analog Lab V, SEM V3) using ui.up()/ui.down().
 
-    Works with both Launchkey (MixerBankLeft/Right) and FLkey (SelectPreviousPreset/SelectNextPreset).
+    Supports multiple button sets:
+    - Launchkey: MixerBankLeft/Right
+    - FLkey: ChannelPluginPageLeft/Right
+
+    When an Arturia plugin is selected, these buttons navigate presets instead of their normal functions.
     """
 
-    ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
+    ARTURIA_STYLE_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V", "SEM V3"]
     CC_PRESET_PREVIOUS = 28
     CC_PRESET_NEXT = 29
 
@@ -28,29 +30,31 @@ class AnalogLabPresetButtonView(View):
         self.product_defs = product_defs
         self.channel_selection_manager = channel_selection_manager
 
-        # Determine which button mapping to use based on product
-        self.prev_button_key = None
-        self.next_button_key = None
+        # Track all button sets that can navigate presets (devices may have multiple sets)
+        self.button_sets = []
 
         print("inside analog button preset")
 
-        # Check if this is a Launchkey (has MixerBankLeft/Right)
+        # Check for FLkey-style plugin page buttons (ChannelPluginPageLeft/Right)
         if self.product_defs.FunctionToButton.get("ChannelPluginPageLeft") is not None:
-            self.prev_button_key = "ChannelPluginPageLeft"
-            self.next_button_key = "ChannelPluginPageRight"
-        # Check if this is FLkey (has SelectPreviousPreset/SelectNextPreset)
-        elif self.product_defs.FunctionToButton.get("MixerBankRight") is not None:
-            self.prev_button_key = "MixerBankLeft"
-            self.next_button_key = "MixerBankRight"
+            self.button_sets.append({
+                "prev": "ChannelPluginPageLeft",
+                "next": "ChannelPluginPageRight"
+            })
 
-        #print(self.next_button_key)
+        # Check for mixer bank buttons (MixerBankLeft/Right) - Launchkey
+        if self.product_defs.FunctionToButton.get("MixerBankLeft") is not None:
+            self.button_sets.append({
+                "prev": "MixerBankLeft",
+                "next": "MixerBankRight"
+            })
 
     def _is_analog_lab_selected(self):
-        """Check if Analog Lab V is the currently selected plugin"""
+        """Check if an Arturia-style plugin is the currently selected plugin"""
         selected_plugin = self.fl.get_selected_plugin()
         if selected_plugin is None:
             return False
-        return any(name in selected_plugin for name in self.ANALOG_LAB_PLUGIN_NAMES)
+        return any(name in selected_plugin for name in self.ARTURIA_STYLE_PLUGIN_NAMES)
 
     def _send_cc_to_selected_channel(self, cc_number, value=127):
         """Send a MIDI CC message to the selected channel"""
@@ -68,36 +72,25 @@ class AnalogLabPresetButtonView(View):
         general.processRECEvent(rec_event_parameter, midi_value, mask)
 
     def handle_ButtonPressedAction(self, action):
-        #print("analog lab handle_ButtonPressedAction")
-        # Only handle if Analog Lab is selected and buttons are configured
-        print("_is_analog_lab_selected")
-        print(action.button)
-        print("onto action buttons")
-        print(action.button)
-        print("self.product_defs.FunctionToButton.get(\"MixerBankLeft\")")
-        print(self.product_defs.FunctionToButton.get("MixerBankLeft"))
-        if not self._is_analog_lab_selected() or self.prev_button_key is None:
+        # Only handle if Analog Lab is selected and we have button sets configured
+        if not self._is_analog_lab_selected() or not self.button_sets:
             return
 
-        print("paste gate ")
-        
-        # print(dir(action))
-        # print(self.product_defs.FunctionToButton.get("PageLeft"))
-        # print(self.prev_button_key)
-        # print(self.product_defs.FunctionToButton.get(self.prev_button_key))
-        # Handle Previous Preset button
-        print("action.button and defs")
-        print(action.button)
-        print(self.product_defs.FunctionToButton.get(self.prev_button_key))
-        print(self.product_defs.FunctionToButton.get(self.next_button_key))
-        if action.button == self.product_defs.FunctionToButton.get(self.prev_button_key):
-          # self._send_cc_to_selected_channel(self.CC_PRESET_PREVIOUS, 127)
-          ui.up()
-          print("up preset was clicked")
+        # Focus the plugin window to ensure commands reach the Arturia plugin
+        #self.fl.ui.focus_channel_plugin_window()
 
+        # Check if any of our configured button sets match this action
+        for button_set in self.button_sets:
+            prev_button = self.product_defs.FunctionToButton.get(button_set["prev"])
+            next_button = self.product_defs.FunctionToButton.get(button_set["next"])
 
-        # Handle Next Preset button
-        elif action.button == self.product_defs.FunctionToButton.get(self.next_button_key):
-          # self._send_cc_to_selected_channel(self.CC_PRESET_NEXT, 127)
-          ui.down()
-          # print("up preset was clicked")
+            if action.button == prev_button:
+                self._send_cc_to_selected_channel(self.CC_PRESET_PREVIOUS, 127)
+                #ui.up()
+                print(f"Arturia preset previous - button set: {button_set['prev']}")
+                return
+            elif action.button == next_button:
+                #ui.down()
+                self._send_cc_to_selected_channel(self.CC_PRESET_NEXT, 127)
+                print(f"Arturia preset next - button set: {button_set['next']}")
+                return

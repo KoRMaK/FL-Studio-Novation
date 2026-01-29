@@ -522,6 +522,7 @@ user_defined_plugin_mappings = {
             #Arturia Moog v4:
             "plugin_name": "Mini V4",
             "parameters": [
+                {"parameter_index": 0},
                 {"parameter_index": 1},
                 {"parameter_index": 2},
                 {"parameter_index": 3},
@@ -804,6 +805,7 @@ user_defined_plugin_mappings = {
             #Arturia Boomstar SEM:
             "plugin_name": "SEM V3",
             "parameters": [
+              {"parameter_index": 0},
                 {"parameter_index": 1},
                 {"parameter_index": 2},
                 {"parameter_index": 3},

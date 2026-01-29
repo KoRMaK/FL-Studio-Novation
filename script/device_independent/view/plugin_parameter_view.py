@@ -10,15 +10,13 @@ class PluginParameterView(View):
     channel_selection_flags = RefreshFlags.ChannelSelection.value | RefreshFlags.ChannelGroup.value
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
 
-    def __init__(self, action_dispatcher, fl, plugin_parameters, *, control_to_index, channel_selection_manager=None, model=None, product_defs=None, button_led_writer=None):
+    def __init__(self, action_dispatcher, fl, plugin_parameters, *, control_to_index, channel_selection_manager=None, model=None):
         super().__init__(action_dispatcher)
         self.fl = fl
         self.plugin_parameters = plugin_parameters
         self.control_to_index = control_to_index
         self.channel_selection_manager = channel_selection_manager
         self.model = model
-        self.product_defs = product_defs
-        self.button_led_writer = button_led_writer
         self.parameters_for_index = []
         self.deadzone_converters_for_index = []
         self.action_dispatcher = action_dispatcher
@@ -33,11 +31,9 @@ class PluginParameterView(View):
             self.model.plugin_parameter_active_page = 0
         self._update_plugin_parameters()
         self.reset_pickup_on_first_movement = True
-        self._update_page_button_leds()
 
     def _on_hide(self):
         self.control_change_rate_limiter.stop()
-        self._turn_off_page_button_leds()
 
     def handle_ChannelSelectAction(self, action):
         # Reset to first page when changing channels
@@ -45,7 +41,6 @@ class PluginParameterView(View):
             self.model.plugin_parameter_active_page = 0
         self._update_plugin_parameters()
         self.reset_pickup_on_first_movement = True
-        self._update_page_button_leds()
 
     def handle_PresetChangedAction(self, action):
         # Reset to first page when preset changes
@@ -53,13 +48,11 @@ class PluginParameterView(View):
             self.model.plugin_parameter_active_page = 0
         self._update_plugin_parameters()
         self.reset_pickup_on_first_movement = True
-        self._update_page_button_leds()
 
     def handle_PluginParameterPageChangedAction(self, action):
         # Update parameters when page changed externally (e.g., from pad press)
         self._update_plugin_parameters()
         self.reset_pickup_on_first_movement = True
-        self._update_page_button_leds()
 
     def handle_OnRefreshAction(self, action):
         if not action.flags & (self.channel_selection_flags | self.mixer_track_selection_flags):
@@ -74,7 +67,6 @@ class PluginParameterView(View):
                     self.model.plugin_parameter_active_page = 0
                 # Update when the Launchkey's selected channel changes
                 self._update_plugin_parameters()
-                self._update_page_button_leds()
         else:
             # Legacy behavior: use global FL Studio selection
             selected_plugin_type = self.fl.get_selected_plugin_type()
@@ -83,13 +75,11 @@ class PluginParameterView(View):
                 if self.model:
                     self.model.plugin_parameter_active_page = 0
                 self._update_plugin_parameters()
-                self._update_page_button_leds()
             if selected_plugin_type == PluginType.Effect and action.flags & self.mixer_track_selection_flags:
                 # Reset to first page when plugin changes
                 if self.model:
                     self.model.plugin_parameter_active_page = 0
                 self._update_plugin_parameters()
-                self._update_page_button_leds()
 
     def _get_selected_channel(self):
         """Get the selected channel, using channel_selection_manager if available"""
@@ -184,77 +174,3 @@ class PluginParameterView(View):
         for parameter in self.parameters_for_index:
             if parameter is not None and parameter.parameter_type is PluginParameterType.Plugin:
                 self.fl.reset_parameter_pickup(parameter.index, group_channel=channel)
-
-    def handle_ButtonPressedAction(self, action):
-        if not self.product_defs or not self.model:
-            return
-
-        # Handle page navigation - support both MixerBank buttons (Launchkey) and Page buttons (FL Key)
-        mixer_bank_left = self.product_defs.FunctionToButton.get("MixerBankLeft")
-        mixer_bank_right = self.product_defs.FunctionToButton.get("MixerBankRight")
-        page_left = self.product_defs.FunctionToButton.get("ChannelPluginPageLeft")
-        page_right = self.product_defs.FunctionToButton.get("ChannelPluginPageRight")
-
-        if action.button in (mixer_bank_left, page_left):
-            self._navigate_to_previous_page()
-        elif action.button in (mixer_bank_right, page_right):
-            self._navigate_to_next_page()
-
-    def _navigate_to_previous_page(self):
-        if not self.model or self.model.plugin_parameter_active_page <= 0:
-            return
-
-        self.model.plugin_parameter_active_page -= 1
-        self._update_plugin_parameters()
-        self.reset_pickup_on_first_movement = True
-        self._update_page_button_leds()
-        self.action_dispatcher.dispatch(PluginParameterPageChangedAction())
-
-    def _navigate_to_next_page(self):
-        if not self.model or self.model.plugin_parameter_active_page >= self.total_pages - 1:
-            return
-
-        self.model.plugin_parameter_active_page += 1
-        self._update_plugin_parameters()
-        self.reset_pickup_on_first_movement = True
-        self._update_page_button_leds()
-        self.action_dispatcher.dispatch(PluginParameterPageChangedAction())
-
-    def _update_page_button_leds(self):
-        """Update page navigation button LEDs to indicate page availability"""
-        if not self.button_led_writer or not self.product_defs or not self.model:
-            return
-
-        from script.colours import Colours
-
-        # Get button mappings (Launchkey uses MixerBank buttons, FL Key uses Page buttons)
-        left_button = self.product_defs.FunctionToButton.get("MixerBankLeft") or self.product_defs.FunctionToButton.get("ChannelPluginPageLeft")
-        right_button = self.product_defs.FunctionToButton.get("MixerBankRight") or self.product_defs.FunctionToButton.get("ChannelPluginPageRight")
-
-        if left_button:
-            # Previous page button (left)
-            prev_available = self.model.plugin_parameter_active_page > 0
-            prev_colour = Colours.available if prev_available else Colours.off
-            self.button_led_writer.set_button_colour(left_button, prev_colour)
-
-        if right_button:
-            # Next page button (right)
-            next_available = self.model.plugin_parameter_active_page < self.total_pages - 1
-            next_colour = Colours.available if next_available else Colours.off
-            self.button_led_writer.set_button_colour(right_button, next_colour)
-
-    def _turn_off_page_button_leds(self):
-        """Turn off page navigation button LEDs"""
-        if not self.button_led_writer or not self.product_defs:
-            return
-
-        from script.colours import Colours
-
-        # Get button mappings (Launchkey uses MixerBank buttons, FL Key uses Page buttons)
-        left_button = self.product_defs.FunctionToButton.get("MixerBankLeft") or self.product_defs.FunctionToButton.get("ChannelPluginPageLeft")
-        right_button = self.product_defs.FunctionToButton.get("MixerBankRight") or self.product_defs.FunctionToButton.get("ChannelPluginPageRight")
-
-        if left_button:
-            self.button_led_writer.set_button_colour(left_button, Colours.off)
-        if right_button:
-            self.button_led_writer.set_button_colour(right_button, Colours.off)

@@ -17,9 +17,7 @@ class PluginPotLayoutManager:
                 plugin_parameter_mappings,
                 control_to_index=control_to_index,
                 channel_selection_manager=channel_selection_manager,
-                model=model,
-                product_defs=product_defs,
-                button_led_writer=button_led_writer
+                model=model
             ),
             PluginParameterScreenView(
                 action_dispatcher,

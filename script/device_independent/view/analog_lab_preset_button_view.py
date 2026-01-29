@@ -86,11 +86,11 @@ class AnalogLabPresetButtonView(View):
 
             if action.button == prev_button:
                 self._send_cc_to_selected_channel(self.CC_PRESET_PREVIOUS, 127)
-                #ui.up()
+                ui.up()
                 print(f"Arturia preset previous - button set: {button_set['prev']}")
                 return
             elif action.button == next_button:
-                #ui.down()
+                ui.down()
                 self._send_cc_to_selected_channel(self.CC_PRESET_NEXT, 127)
                 print(f"Arturia preset next - button set: {button_set['next']}")
                 return

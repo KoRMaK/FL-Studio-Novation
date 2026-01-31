@@ -42,6 +42,10 @@ def OnIdle():
 def OnNoteOn(eventData):
     scan_for_marked_channel()
     midi_bypass.on_note_on(eventData, launchkey_selected_channel)
+    
+    # Uncomment to scan plugin parameters and find mod wheel:
+    #midi_bypass.scan_plugin_parameters(launchkey_selected_channel)
+
 
 
 def OnNoteOff(eventData):
@@ -52,3 +56,11 @@ def OnNoteOff(eventData):
 def OnPitchBend(eventData):
     scan_for_marked_channel()
     midi_bypass.on_pitch_bend(eventData, launchkey_selected_channel)
+
+
+def OnControlChange(eventData):
+    # CC#1 is mod wheel
+    if eventData.data1 == 1:
+        scan_for_marked_channel()
+
+        midi_bypass.on_mod_wheel(eventData, launchkey_selected_channel)

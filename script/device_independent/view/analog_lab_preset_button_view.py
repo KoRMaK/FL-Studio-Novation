@@ -84,6 +84,7 @@ class AnalogLabPresetButtonView(View):
             prev_button = self.product_defs.FunctionToButton.get(button_set["prev"])
             next_button = self.product_defs.FunctionToButton.get(button_set["next"])
 
+            # debug here.
             if action.button == prev_button:
                 self._send_cc_to_selected_channel(self.CC_PRESET_PREVIOUS, 127)
                 ui.up()

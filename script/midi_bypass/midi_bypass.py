@@ -13,6 +13,8 @@ class MidiBypass:
     # Map of plugin names to their mod wheel parameter indices
     PLUGIN_MOD_WHEEL_MAP = {
         "SEM V3": 248,
+        "Mini V4": 4097,
+        "Analog Lab V": 4097
         # Add more plugins here as you discover their mod wheel parameters:
         # "Plugin Name": parameter_index,
     }
@@ -67,7 +69,7 @@ class MidiBypass:
 
     def on_mod_wheel(self, eventData, launchkey_selected_channel=None):
         """Handle MIDI mod wheel (CC#1) events and route to selected plugin"""
-        eventData.handled = True
+        eventData.handled = False
 
         target_channel = self._get_target_channel(launchkey_selected_channel)
         if target_channel is None:
@@ -81,18 +83,15 @@ class MidiBypass:
         plugin_name = plugins.getPluginName(target_channel, -1)
 
         # Look up the mod wheel parameter index for this plugin
+        print(plugin_name)
         mod_wheel_param_index = self.PLUGIN_MOD_WHEEL_MAP.get(plugin_name)
+        print(mod_wheel_param_index)
 
         if mod_wheel_param_index is None:
-            # Plugin not in mapping - fall back to MIDI CC approach
-            # cc_number = 1
-            # cc_value = eventData.data2
-            # rec_event_parameter = cc_number + channels.getRecEventId(target_channel)
-            # midi_value = int((cc_value / 127.0) * midi.FromMIDI_Max)
-            # mask = midi.REC_MIDIController
-            # general.processRECEvent(rec_event_parameter, midi_value, mask)
-            return
+            mod_wheel_param_index = 4096 + 1 # default_cc_offset + default_mod_cc
 
+
+        eventData.handled = True
         # Get mod wheel value from MIDI event
         cc_value = eventData.data2
         normalized_value = cc_value / 127.0

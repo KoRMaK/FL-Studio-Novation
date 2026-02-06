@@ -114,6 +114,7 @@ class Default(View):
         """
         Calculate number of plugin parameter pages for the currently selected channel.
         Returns number of pages where each page contains up to 8 pot parameters.
+        Includes an additional custom page (CC 4030+) for all plugins.
         Page indicators show on TOP row (pads 0-7).
         """
         if self.channel_selection_manager:
@@ -136,7 +137,8 @@ class Default(View):
         num_controls = Pots.Num.value
         num_pages = (len(all_parameters) + num_controls - 1) // num_controls
 
-        return num_pages
+        # Add 1 for the custom page (CC 4030+)
+        return num_pages + 1
 
     def _update_all_leds(self):
         # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
@@ -157,16 +159,19 @@ class Default(View):
             # Light up page indicator pads on TOP row (pads 0-7)
             for pad in range(min(8, Pads.Num.value)):
                 if pad < num_pages:
+                    # The last page is the custom page (CC 4030+) - use seafoam colors
+                    is_custom_page = (pad == num_pages - 1)
+
                     # Choose color based on state
                     if pad in self.pressed_page_indicator_pads:
-                        # Pressed - show teal/aqua
-                        colour = Colours.plugin_page_indicator_pressed.value
+                        # Pressed - show bright teal (custom) or teal/aqua (regular)
+                        colour = Colours.custom_page_indicator_pressed.value if is_custom_page else Colours.plugin_page_indicator_pressed.value
                     elif pad == current_page:
-                        # Active page - slightly brighter blue
-                        colour = Colours.plugin_page_indicator_active.value
+                        # Active page - bright seafoam (custom) or brighter blue (regular)
+                        colour = Colours.custom_page_indicator_active.value if is_custom_page else Colours.plugin_page_indicator_active.value
                     else:
-                        # Inactive page - normal blue
-                        colour = Colours.plugin_page_indicator.value
+                        # Inactive page - dim seafoam (custom) or normal blue (regular)
+                        colour = Colours.custom_page_indicator.value if is_custom_page else Colours.plugin_page_indicator.value
                     self.pad_led_writer.set_pad_colour(pad, colour)
         else:
             # No pot pages - show normal instrument layout

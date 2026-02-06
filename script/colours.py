@@ -22,6 +22,9 @@ class Colours(Enum):
     plugin_page_indicator = scale_colour((0, 100, 255), 0.2)  # Deep blue for plugin page indicators
     plugin_page_indicator_active = scale_colour((0, 120, 255), 0.75)  # Slightly brighter blue for active page
     plugin_page_indicator_pressed = scale_colour((0, 255, 200), 0.8)  # Teal/aqua for pressed page indicator
+    custom_page_indicator = scale_colour((0, 255, 200), 0.25)  # Dim seafoam for custom page (CC 4030+)
+    custom_page_indicator_active = scale_colour((0, 120, 255), 0.75)  #  chill blue for active custom page
+    custom_page_indicator_pressed = scale_colour((0, 255, 200), 1.0)  # Bright teal when pressed
     step_pitch_step_latched = scale_colour((211, 255, 151), 1.0)
     step_pitch_step_on = scale_colour((175, 225, 120), 0.30)
     step_pitch_step_off = scale_colour((175, 225, 120), 0.05)

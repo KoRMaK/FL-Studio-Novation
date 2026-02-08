@@ -83,9 +83,8 @@ class MidiBypass:
         plugin_name = plugins.getPluginName(target_channel, -1)
 
         # Look up the mod wheel parameter index for this plugin
-        print(plugin_name)
         mod_wheel_param_index = self.PLUGIN_MOD_WHEEL_MAP.get(plugin_name)
-        print(mod_wheel_param_index)
+        
 
         if mod_wheel_param_index is None:
             mod_wheel_param_index = 4096 + 1 # default_cc_offset + default_mod_cc

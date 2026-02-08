@@ -33,7 +33,7 @@ class AnalogLabPresetButtonView(View):
         # Track all button sets that can navigate presets (devices may have multiple sets)
         self.button_sets = []
 
-        print("inside analog button preset")
+        #print("inside analog button preset")
 
         # Check for FLkey-style plugin page buttons (ChannelPluginPageLeft/Right)
         if self.product_defs.FunctionToButton.get("ChannelPluginPageLeft") is not None:

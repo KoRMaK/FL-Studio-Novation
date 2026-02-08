@@ -142,8 +142,8 @@ class Default(View):
 
     def _update_all_leds(self):
         # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
-        if self._is_analog_lab_selected():
-            return
+        # if self._is_analog_lab_selected():
+        #     return
 
         num_pages = self._calculate_num_pot_pages()
 
@@ -185,8 +185,8 @@ class Default(View):
 
     def handle_PadPressAction(self, action):
         # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
-        if self._is_analog_lab_selected():
-            return
+        # if self._is_analog_lab_selected():
+        #     return
 
         num_pages = self._calculate_num_pot_pages()
 
@@ -218,8 +218,8 @@ class Default(View):
 
     def handle_PadReleaseAction(self, action):
         # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
-        if self._is_analog_lab_selected():
-            return
+        # if self._is_analog_lab_selected():
+        #     return
 
         num_pages = self._calculate_num_pot_pages()
 

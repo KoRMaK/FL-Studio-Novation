@@ -16,7 +16,7 @@ except ImportError:
 class PluginParameterView(View):
     channel_selection_flags = RefreshFlags.ChannelSelection.value | RefreshFlags.ChannelGroup.value
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
-    CUSTOM_PAGE_CC_START = 4030  # Custom page uses CC 4030-4037
+    CUSTOM_PAGE_CC_START = 4096 + 52  # Custom page CC
 
     def __init__(self, action_dispatcher, fl, plugin_parameters, *, control_to_index, channel_selection_manager=None, model=None):
         super().__init__(action_dispatcher)
@@ -181,6 +181,8 @@ class PluginParameterView(View):
     def _update_value_for_plugin_parameter(self, parameter, control, position):
         if self.control_change_rate_limiter.forward_control_change_event(parameter.index, position):
             # Get the channel to use (if using independent selection)
+            # print(f"parameter.parameter_type {parameter.parameter_type}")
+            # print(f"parameter {parameter}")
             channel = self._get_selected_channel() if self.channel_selection_manager else None
 
             if parameter.parameter_type == PluginParameterType.Channel:
@@ -201,24 +203,24 @@ class PluginParameterView(View):
                 self.fl.reset_parameter_pickup(parameter.index, group_channel=channel)
 
     def _send_custom_cc(self, index, position):
-        """Send CC message for custom page (CC 4030+)"""
-        # Get the selected channel
-        if self.channel_selection_manager:
-            selected_channel = self.channel_selection_manager.get_active_channel()
-        else:
-            selected_channel = self.fl.selected_channel()
+        """Send CC message for custom page (CC 4096+)"""
+        channel = self._get_selected_channel() if self.channel_selection_manager else None
 
-        if selected_channel is None:
-            return
-
-        # Calculate CC number (4030 + index)
+        # Calculate CC number (4096 + index)
         cc_number = self.CUSTOM_PAGE_CC_START + index
 
         # Convert position (0.0-1.0) to MIDI value (0-127)
         midi_value_127 = int(position * 127)
 
-        # Convert to FL Studio's internal MIDI value range
-        rec_event_parameter = cc_number + channels.getRecEventId(selected_channel)
-        midi_value = int((midi_value_127 / 127.0) * midi.FromMIDI_Max)
-        mask = midi.REC_MIDIController
-        general.processRECEvent(rec_event_parameter, midi_value, mask)
+        #print(cc_number - 4096)
+        self.fl.plugin.set_parameter_value(cc_number, position, group_channel=channel)
+
+        # try:
+        #     # Convert to FL Studio's internal MIDI value range
+        #     # rec_event_parameter = cc_number + channels.getRecEventId(selected_channel)
+        #     # midi_value = int((midi_value_127 / 127.0) * midi.FromMIDI_Max)
+        #     # mask = midi.REC_MIDIController
+        #     # general.processRECEvent(rec_event_parameter, midi_value, mask)
+
+        # except Exception as e:
+        #     print(f"Error: {cc_number}")

@@ -1,4 +1,5 @@
 from script.action_generators.surface_action_generator.keyboard_controller_common import (
+    KeyboardControllerCommonButtonActionGenerator,
     KeyboardControllerCommonFaderActionGenerator,
     KeyboardControllerCommonFaderLayoutActionGenerator,
     KeyboardControllerCommonPadActionGenerator,
@@ -13,6 +14,7 @@ class LaunchkeySurfaceActionGenerator:
     def __init__(self, product_defs):
         self.product_defs = product_defs
         self.event_type_to_button = {
+            self.product_defs.SurfaceEvent.ButtonShift.value: self.product_defs.Button.Shift,
             self.product_defs.SurfaceEvent.ButtonChannelRackUp.value: self.product_defs.Button.ChannelRackUp,
             self.product_defs.SurfaceEvent.ButtonChannelRackDown.value: self.product_defs.Button.ChannelRackDown,
             self.product_defs.SurfaceEvent.ButtonTransportPlay.value: self.product_defs.Button.TransportPlay,
@@ -25,6 +27,9 @@ class LaunchkeySurfaceActionGenerator:
         }
 
         self.common_action_generators = [
+            KeyboardControllerCommonButtonActionGenerator(
+                self._get_button_for_event, modifier_event=product_defs.SurfaceEvent.ButtonShift.value
+            ),
             KeyboardControllerCommonPotActionGenerator(self.product_defs),
             KeyboardControllerCommonPotLayoutActionGenerator(self.product_defs),
             KeyboardControllerCommonPadActionGenerator(self.product_defs),
@@ -33,14 +38,14 @@ class LaunchkeySurfaceActionGenerator:
             KeyboardControllerCommonFaderActionGenerator(self.product_defs),
         ]
 
+    def _get_button_for_event(self, event, modifier_button_is_held):
+        if event == self.product_defs.SurfaceEvent.ButtonShift.value:
+            return self.product_defs.Button.Shift
+        # No shift-modified buttons yet for Launchkey, but can add here if needed
+        return self.event_type_to_button.get(event)
+
     def handle_midi_event(self, fl_event):
         for action_generator in self.common_action_generators:
             if actions := action_generator.handle_midi_event(fl_event):
                 return actions
-
-        event_type = fl_event.status, fl_event.data1
-        if button := self.event_type_to_button.get(event_type):
-            if fl_event.data2 == 0:
-                return [ButtonReleasedAction(button=button)]
-            return [ButtonPressedAction(button=button)]
         return []

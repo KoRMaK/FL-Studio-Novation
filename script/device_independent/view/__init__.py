@@ -1,3 +1,4 @@
+from .analog_lab_preset_button_view import AnalogLabPresetButtonView
 from .button_function_screen_view import ButtonFunctionScreenView
 from .channel_bank_controls_highlight_view import ChannelBankControlsHighlightView
 from .channel_bank_names_highlight_view import ChannelBankNamesHighlightView
@@ -25,6 +26,7 @@ from .fpc import Fpc
 from .fpc_bank_view import FpcBankView
 from .metronome_button_view import MetronomeButtonView
 from .mixer_bank_button_view import MixerBankButtonView
+from .modo_drum import ModoDrum
 from .mixer_bank_highlight_view import MixerBankHighlightView
 from .mixer_bank_view import MixerBankView
 from .mixer_master_volume_view import MixerMasterVolumeView
@@ -44,6 +46,7 @@ from .pattern_select_screen_view import PatternSelectScreenView
 from .pattern_select_view import PatternSelectView
 from .plugin_parameter_screen_view import PluginParameterScreenView
 from .plugin_parameter_view import PluginParameterView
+from .pot_mode_selector_view import PotModeSelectorView
 from .preset_button_screen_view import PresetButtonScreenView
 from .preset_button_view import PresetButtonView
 from .quantise_button_view import QuantiseButtonView
@@ -71,6 +74,7 @@ from .transport_stop_button_view import TransportStopButtonView
 from .undo_button_view import UndoButtonView
 
 __all__ = [
+    "AnalogLabPresetButtonView",
     "ButtonFunctionScreenView",
     "ChannelBankControlsHighlightView",
     "ChannelBankNamesHighlightView",
@@ -99,6 +103,7 @@ __all__ = [
     "MetronomeButtonView",
     "MetronomeButtonView",
     "MixerBankButtonView",
+    "ModoDrum",
     "MixerBankHighlightView",
     "MixerBankView",
     "MixerMasterVolumeView",
@@ -118,6 +123,7 @@ __all__ = [
     "PatternSelectView",
     "PluginParameterScreenView",
     "PluginParameterView",
+    "PotModeSelectorView",
     "PresetButtonScreenView",
     "PresetButtonView",
     "QuantiseButtonView",

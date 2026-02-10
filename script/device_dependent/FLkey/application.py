@@ -13,6 +13,7 @@ from script.device_dependent.FLkeyRange import (
 )
 from script.device_independent.fl_gui.fl_window_manager import FLWindowManager
 from script.device_independent.view import (
+    AnalogLabPresetButtonView,
     ButtonFunctionScreenView,
     ChannelSelectedScreenView,
     CloneCurrentPatternView,
@@ -81,6 +82,7 @@ class Application:
         self.action_dispatcher.subscribe(self)
 
         self.global_views = {
+            AnalogLabPresetButtonView(self.action_dispatcher, self.fl, self.product_defs),
             ButtonFunctionScreenView(self.action_dispatcher, self.screen_writer, self.fl),
             ChannelSelectedScreenView(self.action_dispatcher, self.screen_writer, self.fl),
             DumpScoreLogButtonView(self.action_dispatcher, self.fl, self.product_defs),
@@ -280,7 +282,14 @@ class Application:
                 self.action_dispatcher, self.fl, self.screen_writer, self.model, self.fl_window_manager
             )
         if layout == self.product_defs.PotLayout.Plugin:
-            return PluginPotLayoutManager(self.action_dispatcher, self.fl, self.screen_writer)
+            return PluginPotLayoutManager(
+                self.action_dispatcher,
+                self.fl,
+                self.screen_writer,
+                self.model,
+                self.product_defs,
+                self.button_led_writer,
+            )
         if layout == self.product_defs.PotLayout.Momentary:
             return MomentaryPotLayoutManager(self.action_dispatcher, self.fl, self.model)
         return None

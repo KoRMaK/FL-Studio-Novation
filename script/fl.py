@@ -40,18 +40,23 @@ class Channel:
             return ChannelType(channels.getChannelType(channels.selectedChannel()))
         return ChannelType(channels.getChannelType(group_channel))
 
-    def set_parameter_value(self, parameter, value):
-        rec_event_parameter = parameter + channels.getRecEventId(channels.selectedChannel())
+    def set_parameter_value(self, parameter, value, group_channel=None):
+        if group_channel is None:
+            group_channel = channels.selectedChannel()
+        rec_event_parameter = parameter + channels.getRecEventId(group_channel)
         value = int(value * midi.FromMIDI_Max)
         mask = midi.REC_MIDIController
         general.processRECEvent(rec_event_parameter, value, mask)
 
-    def set_pitch(self, value):
+    def set_pitch(self, value, group_channel=None):
         """
         value: Normalised pitch value in range 0 to 1
+        group_channel: Optional group channel index. If None, uses selected channel.
         """
         bipolar_pitch_value = util.math.normalised_unipolar_to_bipolar(value)
-        channels.setChannelPitch(channels.selectedChannel(), bipolar_pitch_value)
+        if group_channel is None:
+            group_channel = channels.selectedChannel()
+        channels.setChannelPitch(group_channel, bipolar_pitch_value)
 
 
 class Plugin:
@@ -72,10 +77,17 @@ class Plugin:
         parameter_index_midi_note = 1
         return plugins.getPadInfo(group_channel, -1, parameter_index_midi_note, pad_index)
 
-    def set_parameter_value(self, parameter, value):
-        plugins.setParamValue(
-            value, parameter, *self.fl.get_selected_plugin_position(), PickupFollowMode.FollowUserSetting.value
-        )
+    def set_parameter_value(self, parameter, value, group_channel=None):
+        if group_channel is not None:
+            # Use the specified channel
+            plugins.setParamValue(
+                value, parameter, group_channel, -1, PickupFollowMode.FollowUserSetting.value
+            )
+        else:
+            # Use the globally selected plugin
+            plugins.setParamValue(
+                value, parameter, *self.fl.get_selected_plugin_position(), PickupFollowMode.FollowUserSetting.value
+            )
 
 
 class UI:
@@ -201,13 +213,24 @@ class FL:
     def reset_channel_pan_pickup(self, channel):
         channels.setChannelPan(channel, channels.getChannelPan(channel), PickupFollowMode.NoPickup.value)
 
-    def reset_parameter_pickup(self, parameter):
-        plugins.setParamValue(
-            plugins.getParamValue(parameter, *self.get_selected_plugin_position()),
-            parameter,
-            *self.get_selected_plugin_position(),
-            PickupFollowMode.NoPickup.value,
-        )
+    def reset_parameter_pickup(self, parameter, group_channel=None):
+        if group_channel is not None:
+            # Use the specified channel
+            plugins.setParamValue(
+                plugins.getParamValue(parameter, group_channel, -1),
+                parameter,
+                group_channel,
+                -1,
+                PickupFollowMode.NoPickup.value,
+            )
+        else:
+            # Use the globally selected plugin
+            plugins.setParamValue(
+                plugins.getParamValue(parameter, *self.get_selected_plugin_position()),
+                parameter,
+                *self.get_selected_plugin_position(),
+                PickupFollowMode.NoPickup.value,
+            )
 
     def set_channel_volume(self, channel, volume):
         channels.setChannelVolume(channel, volume, PickupFollowMode.FollowUserSetting.value)
@@ -610,13 +633,19 @@ class FL:
     def dump_score_log(self, duration_seconds):
         general.dumpScoreLog(duration_seconds, 1)
 
-    def get_parameter_name(self, parameter):
+    def get_parameter_name(self, parameter, group_channel=None):
+        if group_channel is not None:
+            return plugins.getParamName(parameter, group_channel, -1)
         return plugins.getParamName(parameter, *self.get_selected_plugin_position())
 
-    def get_parameter_value(self, parameter):
+    def get_parameter_value(self, parameter, group_channel=None):
+        if group_channel is not None:
+            return plugins.getParamValue(parameter, group_channel, -1)
         return plugins.getParamValue(parameter, *self.get_selected_plugin_position())
 
-    def get_parameter_value_as_string(self, parameter):
+    def get_parameter_value_as_string(self, parameter, group_channel=None):
+        if group_channel is not None:
+            return plugins.getParamValueString(parameter, group_channel, -1)
         return plugins.getParamValueString(parameter, *self.get_selected_plugin_position())
 
     def send_tap_tempo_event(self):

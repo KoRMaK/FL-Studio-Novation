@@ -22,6 +22,7 @@ class InstrumentPlugin(Enum):
     Fpc = "FPC"
     FruitySlicer = "Fruity Slicer"
     SliceX = "Slicex"
+    ModoDrum = "MODO DRUM"
 
 
 class PluginType(Enum):

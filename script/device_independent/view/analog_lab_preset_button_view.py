@@ -72,6 +72,9 @@ class AnalogLabPresetButtonView(View):
         general.processRECEvent(rec_event_parameter, midi_value, mask)
 
     def handle_ButtonPressedAction(self, action):
+        # DEPRECATED: This methodolgy of navigating presets in analog lab is no longer 
+        # used in practice. The custom page of the pot views is used instead.
+
         # Only handle if Analog Lab is selected and we have button sets configured
         if not self._is_analog_lab_selected() or not self.button_sets:
             return

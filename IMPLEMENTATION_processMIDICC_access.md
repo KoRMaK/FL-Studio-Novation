@@ -55,17 +55,9 @@ This allows downstream code to selectively set `fl_event.handled = False`, passi
    - The complex logic in `_send_custom_cc()` isn't necessary
    - Simply setting `handled = False` is sufficient
 
-### ✗ Not Actually Needed (But Implemented):
+### ✗ Not Actually Needed:
 
-1. **Device reference module** (`device_reference.py`)
-   - Created for accessing `device.processMIDICC()`
-   - Not required for the current solution
-   - Could be useful for future features that need other device functions
-
-2. **Passing device to PluginParameterView**
-   - All the layout manager updates to pass `device=get_device()`
-   - Not needed for this specific feature
-   - Doesn't hurt to have for future use
+~~Device reference code has been removed to reduce cognitive load~~
 
 ## Summary
 
@@ -98,38 +90,11 @@ Modified to include `fl_event=fl_event` when creating `ControlChangedAction`.
 
 Moved `fl_event.handled = True` to the beginning of the method, allowing downstream code to set `handled = False` to pass events back to FL Studio.
 
-### 4. Created Device Reference Module (Optional)
-**File**: `script/device_reference.py` (new file)
-
-Module to hold a reference to the `device` module from FL Studio's global namespace. Created for `processMIDICC()` access but turned out to be unnecessary for the current solution. May be useful for future features.
-
-### 5. Updated All Device Files to Set Device Reference (Optional)
-**Files**:
-- `device_novation_lk_daw.py`
-- `device_novation_lk_88_daw.py`
-- `device_novation_lk_mini_daw.py`
-- `device_novation_flkey_37_daw.py`
-- `device_novation_flkey_49_daw.py`
-- `device_novation_flkey_61_daw.py`
-- `device_novation_flkey_mini_daw.py`
-
-All DAW device files now import and call `set_device(device)`. Not required for current solution but available for future use.
-
-### 6. Updated `PluginParameterView` to Accept Device Reference and fl_event
+### 4. Updated `PluginParameterView` to Accept fl_event
 **File**: `script/device_independent/view/plugin_parameter_view.py`
 
-- Added `device=None` parameter to `__init__` (optional for current solution)
-- Stores device reference as `self.device` (optional)
-- Updated `_send_custom_cc()` to accept `fl_event` parameter (**required**)
-- Can modify `fl_event` properties and set `handled = False` (**the actual solution**)
-
-### 7. Updated All PluginParameterView Instantiations (Optional)
-**Files**:
-- `script/device_dependent/LaunchkeyRange/plugin_pot_layout_manager.py`
-- `script/device_dependent/FLkeyRange/plugin_pot_layout_manager.py`
-- `script/device_dependent/FLkey/plugin_fader_layout_manager.py`
-
-All instantiations now pass `device=get_device()`. Optional for current solution.
+- Updated `_send_custom_cc()` to accept `fl_event` parameter
+- Can modify `fl_event` properties and set `handled = False` (the actual solution)
 
 ## How It Works (Simplified)
 

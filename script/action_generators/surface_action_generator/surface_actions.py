@@ -11,6 +11,7 @@ class PadLayoutChangedAction:
 class ControlChangedAction:
     control: int
     position: float
+    fl_event: object = None
 
 
 @PlainData

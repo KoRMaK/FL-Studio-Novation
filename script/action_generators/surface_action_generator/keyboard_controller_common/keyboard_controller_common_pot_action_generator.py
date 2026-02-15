@@ -14,5 +14,5 @@ class KeyboardControllerCommonPotActionGenerator:
             pot = fl_event.data1 - pot_first_index
             normalised_position = fl_event.data2 / self.MaxMidiValue
             if (control := self.product_defs.PotIndexToControlIndex.get(pot)) is not None:
-                return [ControlChangedAction(control=control, position=normalised_position)]
+                return [ControlChangedAction(control=control, position=normalised_position, fl_event=fl_event)]
         return []

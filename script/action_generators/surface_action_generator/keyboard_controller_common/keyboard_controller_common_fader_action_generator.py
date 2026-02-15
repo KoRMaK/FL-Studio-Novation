@@ -14,5 +14,5 @@ class KeyboardControllerCommonFaderActionGenerator:
             fader = fl_event.data1 - fader_first_index
             normalised_position = fl_event.data2 / self.MaxMidiValue
             if (control := self.product_defs.FaderIndexToControlIndex.get(fader)) is not None:
-                return [ControlChangedAction(control=control, position=normalised_position)]
+                return [ControlChangedAction(control=control, position=normalised_position, fl_event=fl_event)]
         return []

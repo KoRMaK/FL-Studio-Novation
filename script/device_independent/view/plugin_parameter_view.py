@@ -164,9 +164,10 @@ class PluginParameterView(View):
             if not self.is_custom_page:
                 self._reset_pickup()
 
+        print(f"fl_event {action.fl_event.midiChan} {action.fl_event.controlNum} {action.fl_event.data1} {action.fl_event.data2}")
         # If on custom page, send CC message directly
         if self.is_custom_page:
-            self._send_custom_cc(index, action.position)
+            self._send_custom_cc(index, action.position, action.fl_event)
             return
 
         parameter = self.parameters_for_index[index]
@@ -202,25 +203,39 @@ class PluginParameterView(View):
             if parameter is not None and parameter.parameter_type is PluginParameterType.Plugin:
                 self.fl.reset_parameter_pickup(parameter.index, group_channel=channel)
 
-    def _send_custom_cc(self, index, position):
+    def _send_custom_cc(self, index, position, fl_event=None):
+        print(f"fl_event {fl_event.midiChan} {fl_event.controlNum} {fl_event.data1} {fl_event.data2}")
         """Send CC message for custom page (CC 4096+)"""
+
+        """
+        Args:
+            index: Control index (0-7 for pots)
+            position: Normalized position (0.0-1.0)
+            fl_event: Original FL event data object (if available)
+        """
+        fl_event.handled = False
+        # fl_event.midiChan = 0
+        # fl_event.controlNum = 52
+        # print(f"fl_event {fl_event.midiChan} {fl_event.controlNum} {fl_event.data1} {fl_event.data2}")
+        # self.device.processMIDICC(fl_event)
+        return
+
         channel = self._get_selected_channel() if self.channel_selection_manager else None
 
+        # Calculate CC number (52-59 for the custom page)
         # Calculate CC number (4096 + index)
         cc_number = self.CUSTOM_PAGE_CC_START + index
 
         # Convert position (0.0-1.0) to MIDI value (0-127)
         midi_value_127 = int(position * 127)
 
-        #print(cc_number - 4096)
+
+        # Modify the eventData to contain our custom CC message
+        fl_event.controlNum = cc_number - 4096  # Convert back to raw CC number (52-59)
+        fl_event.controlVal = midi_value_127
+        fl_event.midiChan = 0  # Send on channel 1 (0-indexed)
+
+        # Leaving this here as an example, although we dont really need it
+        # self.device.processMIDICC(fl_event)
+
         self.fl.plugin.set_parameter_value(cc_number, position, group_channel=channel)
-
-        # try:
-        #     # Convert to FL Studio's internal MIDI value range
-        #     # rec_event_parameter = cc_number + channels.getRecEventId(selected_channel)
-        #     # midi_value = int((midi_value_127 / 127.0) * midi.FromMIDI_Max)
-        #     # mask = midi.REC_MIDIController
-        #     # general.processRECEvent(rec_event_parameter, midi_value, mask)
-
-        # except Exception as e:
-        #     print(f"Error: {cc_number}")

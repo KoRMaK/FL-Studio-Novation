@@ -8,6 +8,7 @@ from script.fl_constants import PluginType, RefreshFlags
 class PluginParameterScreenView(View):
     channel_selection_flags = RefreshFlags.ChannelSelection.value | RefreshFlags.ChannelGroup.value
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
+    HYBRID_PAGE_NUM_PARAMS = 6  # Must match PluginParameterView.HYBRID_PAGE_NUM_PARAMS
 
     def __init__(self, action_dispatcher, fl, screen_writer, plugin_parameters, *, control_to_index, channel_selection_manager=None, model=None):
         super().__init__(action_dispatcher)
@@ -80,16 +81,40 @@ class PluginParameterScreenView(View):
             # Calculate pagination
             num_controls = len(self.control_to_index)
             current_page = self.model.plugin_parameter_active_page if self.model else 0
+            plugin_pages = (len(plugin_parameters) + num_controls - 1) // num_controls if plugin_parameters else 0
+            is_hybrid_page = (current_page == plugin_pages)
+            is_custom_page = (current_page == plugin_pages + 1)
 
-            # Slice parameters for current page
-            start_index = current_page * num_controls
-            end_index = start_index + num_controls
+            if is_custom_page:
+                self._set_primary_text_for_all_controls("CC Thru")
+            elif is_hybrid_page:
+                # Hybrid page: first 6 knobs show last 6 param names, last 2 show CC labels
+                from script.device_independent.view.plugin_parameter_view import PluginParameterView
+                num_params = self.HYBRID_PAGE_NUM_PARAMS
+                last_params = plugin_parameters[-num_params:] if len(plugin_parameters) >= num_params else list(plugin_parameters)
+                while len(last_params) < num_params:
+                    last_params.insert(0, None)
 
-            for control, index in self.control_to_index.items():
-                # Map control index to paginated parameter index
-                paginated_index = start_index + index
-                if paginated_index >= len(plugin_parameters) or plugin_parameters[paginated_index] is None:
-                    self._set_primary_text_for_control(control, "Not Used")
+                channel = self._get_selected_channel() if self.channel_selection_manager else None
+                for control, index in self.control_to_index.items():
+                    if index < num_params:
+                        param = last_params[index]
+                        if param is None:
+                            self._set_primary_text_for_control(control, "Not Used")
+                        else:
+                            name = self.fl.get_parameter_name(param.index, group_channel=channel) if param.name is None else param.name
+                            self._set_primary_text_for_control(control, name)
+                    else:
+                        cc_knob = PluginParameterView.HYBRID_PAGE_CC_KNOBS[index - num_params]
+                        self._set_primary_text_for_control(control, f"CC {cc_knob['controlNum']}")
+            else:
+                # Regular plugin parameter page
+                start_index = current_page * num_controls
+
+                for control, index in self.control_to_index.items():
+                    paginated_index = start_index + index
+                    if paginated_index >= len(plugin_parameters) or plugin_parameters[paginated_index] is None:
+                        self._set_primary_text_for_control(control, "Not Used")
 
     def _set_primary_text_for_control(self, control, text):
         self.screen_writer.display_parameter(control, name=text, value="")

@@ -86,10 +86,10 @@ class FLToApplicationAdapter:
         print(f"MIDI IN: status={fl_event.status:#04x} data1={fl_event.data1} data2={fl_event.data2} " +
               f"midiChan={fl_event.midiChan} controlNum={fl_event.controlNum} controlVal={fl_event.controlVal}")
 
-        fl_event.handled = True
+        #fl_event.handled = True
         self.surface_action_generator.handle_midi_event(fl_event)
         self.firmware_version_validation_controller.handle_midi_event(fl_event)
-        #fl_event.handled = True
+        fl_event.handled = True
 
     @detect_api_unsafe_status_change
     @cache_led_updates

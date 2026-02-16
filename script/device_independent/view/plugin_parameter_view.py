@@ -17,6 +17,11 @@ class PluginParameterView(View):
     channel_selection_flags = RefreshFlags.ChannelSelection.value | RefreshFlags.ChannelGroup.value
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
     CUSTOM_PAGE_CC_START = 4096 + 52  # Custom page CC
+    HYBRID_PAGE_CC_KNOBS = [
+        {'controlNum': 52, 'midiChan': 0, 'port': 0},
+        {'controlNum': 53, 'midiChan': 0, 'port': 0},
+    ]
+    HYBRID_PAGE_NUM_PARAMS = 6  # First 6 knobs are plugin params, last 2 are CC pass-thru
 
     def __init__(self, action_dispatcher, fl, plugin_parameters, *, control_to_index, channel_selection_manager=None, model=None):
         super().__init__(action_dispatcher)
@@ -33,6 +38,7 @@ class PluginParameterView(View):
         self.all_parameters = []  # Store all available parameters for current plugin
         self.total_pages = 0
         self.is_custom_page = False  # Track if we're on the custom CC page
+        self.is_hybrid_page = False  # Track if we're on the hybrid page
 
     def _on_show(self):
         self.control_change_rate_limiter.start()
@@ -113,27 +119,42 @@ class PluginParameterView(View):
             # Store all parameters for pagination
             self.all_parameters = self.plugin_parameters[plugin]
 
-            # Calculate pagination (plugin parameter pages only, not including custom page)
+            # Calculate pagination (plugin parameter pages only, not including custom pages)
             num_controls = len(self.control_to_index)
             plugin_pages = (len(self.all_parameters) + num_controls - 1) // num_controls if self.all_parameters else 0
-            self.total_pages = plugin_pages + 1  # +1 for custom page
+            self.total_pages = plugin_pages + 2  # +1 for hybrid page, +1 for custom page
 
             # Get current page from model, or use 0 if no model
             current_page = self.model.plugin_parameter_active_page if self.model else 0
 
-            # Ensure current page is valid (including custom page)
+            # Ensure current page is valid (including hybrid + custom pages)
             if current_page >= self.total_pages:
                 current_page = 0
                 if self.model:
                     self.model.plugin_parameter_active_page = 0
 
-            # Check if we're on the custom page (last page)
-            self.is_custom_page = (current_page == plugin_pages)
+            # Check if we're on the hybrid page or custom page
+            self.is_hybrid_page = (current_page == plugin_pages)
+            self.is_custom_page = (current_page == plugin_pages + 1)
 
             if self.is_custom_page:
                 # Custom page: create placeholder parameters for CC control
                 self.parameters_for_index = [None] * num_controls
                 self.deadzone_converters_for_index = [None] * num_controls
+            elif self.is_hybrid_page:
+                # Hybrid page: last 6 params + 2 CC pass-thru knobs
+                num_params = self.HYBRID_PAGE_NUM_PARAMS
+                last_params = self.all_parameters[-num_params:] if len(self.all_parameters) >= num_params else list(self.all_parameters)
+                # Pad to 6 if fewer params available, then add 2 None slots for CC knobs
+                while len(last_params) < num_params:
+                    last_params.insert(0, None)
+                self.parameters_for_index = last_params + [None] * len(self.HYBRID_PAGE_CC_KNOBS)
+                self.deadzone_converters_for_index = [None] * len(self.parameters_for_index)
+                for index, parameter in enumerate(self.parameters_for_index[:num_params]):
+                    if parameter and parameter.deadzone_centre:
+                        self.deadzone_converters_for_index[index] = DeadzoneValueConverter(
+                            maximum=1.0, centre=parameter.deadzone_centre, width=parameter.deadzone_width
+                        )
             else:
                 # Regular plugin parameter page
                 start_index = current_page * num_controls
@@ -153,6 +174,7 @@ class PluginParameterView(View):
             self.deadzone_converters_for_index = []
             self.total_pages = 0
             self.is_custom_page = False
+            self.is_hybrid_page = False
 
     def handle_ControlChangedAction(self, action):
         index = self.control_to_index.get(action.control)
@@ -161,13 +183,19 @@ class PluginParameterView(View):
 
         if self.reset_pickup_on_first_movement:
             self.reset_pickup_on_first_movement = False
-            if not self.is_custom_page:
+            if not self.is_custom_page and not self.is_hybrid_page:
                 self._reset_pickup()
+            elif self.is_hybrid_page:
+                self._reset_pickup()  # Reset pickup for the 6 real params on hybrid page
 
-        print(f"fl_event {action.fl_event.midiChan} {action.fl_event.controlNum} {action.fl_event.data1} {action.fl_event.data2}")
         # If on custom page, send CC message directly
         if self.is_custom_page:
             self._send_custom_cc(index, action.position, action.fl_event)
+            return
+
+        # If on hybrid page, route based on knob index
+        if self.is_hybrid_page and index >= self.HYBRID_PAGE_NUM_PARAMS:
+            self._send_hybrid_cc(index, action.position, action.fl_event)
             return
 
         parameter = self.parameters_for_index[index]
@@ -199,7 +227,9 @@ class PluginParameterView(View):
         # Get the channel to use (if using independent selection)
         channel = self._get_selected_channel() if self.channel_selection_manager else None
 
-        for parameter in self.parameters_for_index:
+        # On hybrid page, only reset pickup for the real param knobs (first 6), not CC knobs
+        params_to_reset = self.parameters_for_index[:self.HYBRID_PAGE_NUM_PARAMS] if self.is_hybrid_page else self.parameters_for_index
+        for parameter in params_to_reset:
             if parameter is not None and parameter.parameter_type is PluginParameterType.Plugin:
                 self.fl.reset_parameter_pickup(parameter.index, group_channel=channel)
 
@@ -239,3 +269,13 @@ class PluginParameterView(View):
         # self.device.processMIDICC(fl_event)
 
         self.fl.plugin.set_parameter_value(cc_number, position, group_channel=channel)
+
+    def _send_hybrid_cc(self, index, position, fl_event=None):
+        """Send CC message for hybrid page pass-thru knobs (knobs 6-7)."""
+        if fl_event is None:
+            return
+        cc_knob = self.HYBRID_PAGE_CC_KNOBS[index - self.HYBRID_PAGE_NUM_PARAMS]
+        fl_event.controlNum = cc_knob['controlNum']
+        fl_event.controlVal = int(position * 127)
+        fl_event.midiChan = cc_knob['midiChan']
+        fl_event.handled = False

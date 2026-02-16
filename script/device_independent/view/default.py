@@ -137,8 +137,8 @@ class Default(View):
         num_controls = Pots.Num.value
         num_pages = (len(all_parameters) + num_controls - 1) // num_controls
 
-        # Add 1 for the custom page (CC 4030+)
-        return num_pages + 1
+        # Add 2 for the hybrid page + custom page
+        return num_pages + 2
 
     def _update_all_leds(self):
         # Skip if Analog Lab is selected (let AnalogLabPadView handle it)
@@ -159,8 +159,8 @@ class Default(View):
             # Light up page indicator pads on TOP row (pads 0-7)
             for pad in range(min(8, Pads.Num.value)):
                 if pad < num_pages:
-                    # The last page is the custom page (CC 4030+) - use seafoam colors
-                    is_custom_page = (pad == num_pages - 1)
+                    # The last two pages are custom (hybrid + custom CC) - use seafoam colors
+                    is_custom_page = (pad >= num_pages - 2)
 
                     # Choose color based on state
                     if pad in self.pressed_page_indicator_pads:

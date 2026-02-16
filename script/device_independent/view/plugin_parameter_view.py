@@ -1,5 +1,6 @@
-from script.actions import PluginParameterValueChangedAction, PluginParameterPageChangedAction
+from script.actions import PluginParameterValueChangedAction, PluginParameterPageChangedAction, CustomCcValueChangedAction
 from script.constants import PluginParameterType
+import script.device_adapters.fl_to_application_adapter.fl_to_application_adapter as fl_adapter
 from script.device_independent.util_view.view import View
 from script.device_independent.view.control_change_rate_limiter import ControlChangeRateLimiter
 from script.fl_constants import PluginType, RefreshFlags
@@ -134,8 +135,8 @@ class PluginParameterView(View):
                     self.model.plugin_parameter_active_page = 0
 
             # Check if we're on the hybrid page or custom page
-            self.is_hybrid_page = (current_page == plugin_pages)
-            self.is_custom_page = (current_page == plugin_pages + 1)
+            self.is_custom_page = (current_page == plugin_pages)
+            self.is_hybrid_page = (current_page == plugin_pages + 1)
 
             if self.is_custom_page:
                 # Custom page: create placeholder parameters for CC control
@@ -243,12 +244,12 @@ class PluginParameterView(View):
             position: Normalized position (0.0-1.0)
             fl_event: Original FL event data object (if available)
         """
-        fl_event.handled = False
+        # fl_event.handled = False
         # fl_event.midiChan = 0
         # fl_event.controlNum = 52
         # print(f"fl_event {fl_event.midiChan} {fl_event.controlNum} {fl_event.data1} {fl_event.data2}")
         # self.device.processMIDICC(fl_event)
-        return
+        # return
 
         channel = self._get_selected_channel() if self.channel_selection_manager else None
 
@@ -270,6 +271,16 @@ class PluginParameterView(View):
 
         self.fl.plugin.set_parameter_value(cc_number, position, group_channel=channel)
 
+        self.action_dispatcher.dispatch(
+            CustomCcValueChangedAction(
+                control=list(self.control_to_index.keys())[index],
+                cc_number=fl_event.controlNum,
+                midi_channel=fl_event.midiChan,
+                port=0,
+                value=midi_value_127,
+            )
+        )
+
     def _send_hybrid_cc(self, index, position, fl_event=None):
         """Send CC message for hybrid page pass-thru knobs (knobs 6-7)."""
         if fl_event is None:
@@ -279,3 +290,4 @@ class PluginParameterView(View):
         fl_event.controlVal = int(position * 127)
         fl_event.midiChan = cc_knob['midiChan']
         fl_event.handled = False
+        fl_adapter.skip_claiming_handled = True

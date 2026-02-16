@@ -82,11 +82,13 @@ class PluginParameterScreenView(View):
             num_controls = len(self.control_to_index)
             current_page = self.model.plugin_parameter_active_page if self.model else 0
             plugin_pages = (len(plugin_parameters) + num_controls - 1) // num_controls if plugin_parameters else 0
-            is_hybrid_page = (current_page == plugin_pages)
-            is_custom_page = (current_page == plugin_pages + 1)
+            is_custom_page = (current_page == plugin_pages)
+            is_hybrid_page = (current_page == plugin_pages + 1)
 
             if is_custom_page:
-                self._set_primary_text_for_all_controls("CC Thru")
+                for control, index in self.control_to_index.items():
+                    cc_num = 52 + index
+                    self._set_primary_text_for_control(control, f"CC {cc_num}")
             elif is_hybrid_page:
                 # Hybrid page: first 6 knobs show last 6 param names, last 2 show CC labels
                 from script.device_independent.view.plugin_parameter_view import PluginParameterView
@@ -143,6 +145,11 @@ class PluginParameterScreenView(View):
             ) or self._normalised_value_to_percentage_string(self.fl.get_parameter_value(parameter.index, group_channel=channel))
 
         return name, value
+
+    def handle_CustomCcValueChangedAction(self, action):
+        name = f"CC {action.cc_number}"
+        value = f"ch{action.midi_channel + 1} p{action.port} v{action.value}"
+        self.screen_writer.display_parameter(action.control, name=name, value=value)
 
     def handle_PluginParameterValueChangedAction(self, action):
         name, value = self._get_parameter_name_and_value(action.parameter, action.value)

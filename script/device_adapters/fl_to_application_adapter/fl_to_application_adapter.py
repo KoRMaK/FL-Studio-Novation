@@ -14,6 +14,8 @@ from script.fl_constants import ProjectLoadStatus
 from util.decorators import cache_led_updates, detect_status_change
 from util.print import print_to_script_output
 
+skip_claiming_handled = False
+
 
 def detect_api_unsafe_status_change(func):
     return detect_status_change(
@@ -89,7 +91,11 @@ class FLToApplicationAdapter:
         #fl_event.handled = True
         self.surface_action_generator.handle_midi_event(fl_event)
         self.firmware_version_validation_controller.handle_midi_event(fl_event)
-        fl_event.handled = True
+        global skip_claiming_handled
+        if skip_claiming_handled:
+            skip_claiming_handled = False
+        else:
+            fl_event.handled = True
 
     @detect_api_unsafe_status_change
     @cache_led_updates

@@ -250,3 +250,12 @@ class PatternSelectedAction:
 @PlainData
 class PluginParameterPageChangedAction:
     pass
+
+
+@PlainData
+class CustomCcValueChangedAction:
+    control: int
+    cc_number: int
+    midi_channel: int
+    port: int
+    value: int

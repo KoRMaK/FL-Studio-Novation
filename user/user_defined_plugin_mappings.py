@@ -547,6 +547,11 @@ user_defined_plugin_mappings = {
                 {"parameter_index": 22},
                 {"parameter_index": 23},
                 {"parameter_index": 24},
+                {"parameter_index": 17},
+                {"parameter_index": 17},
+                {"parameter_index": 17},
+                {"parameter_index": 18},
+                {"parameter_index": 19},
            ],
         },
         {

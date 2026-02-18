@@ -8,7 +8,7 @@ class SurfaceActionGeneratorWrapper:
         self._suspended_action_types = ()
 
     def handle_midi_event(self, fl_event):
-        print(f"{fl_event.data1} {fl_event.data2}")
+        # print(f"{fl_event.data1} {fl_event.data2}")
         actions = self.action_generator.handle_midi_event(fl_event)
         if actions:
             for action in actions:

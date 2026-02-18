@@ -8,6 +8,7 @@ from util.deadzone_value_converter import DeadzoneValueConverter
 
 try:
     import channels
+    import device
     import general
     import midi
 except ImportError:
@@ -19,8 +20,8 @@ class PluginParameterView(View):
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
     CUSTOM_PAGE_CC_START = 4096 + 52  # Custom page CC
     HYBRID_PAGE_CC_KNOBS = [
-        {'controlNum': 52, 'midiChan': 0, 'port': 0},
-        {'controlNum': 53, 'midiChan': 0, 'port': 0},
+        {'controlNum': 23, 'midiChan': 11, 'port': 0},
+        {'controlNum': 24, 'midiChan': 11, 'port': 0},
     ]
     HYBRID_PAGE_NUM_PARAMS = 6  # First 6 knobs are plugin params, last 2 are CC pass-thru
 
@@ -282,12 +283,24 @@ class PluginParameterView(View):
         )
 
     def _send_hybrid_cc(self, index, position, fl_event=None):
+        # fl_event.handled = False
+        # fl_adapter.skip_claiming_handled = True
+        # return
         """Send CC message for hybrid page pass-thru knobs (knobs 6-7)."""
         if fl_event is None:
             return
+        #fl_event2 = fl_event.copy(port=4)
         cc_knob = self.HYBRID_PAGE_CC_KNOBS[index - self.HYBRID_PAGE_NUM_PARAMS]
-        fl_event.controlNum = cc_knob['controlNum']
+        fl_event.status = 0xBF
+        fl_event.controlNum = 0x1C #cc_knob['controlNum']
         fl_event.controlVal = int(position * 127)
-        fl_event.midiChan = cc_knob['midiChan']
+        fl_event.midiChan = 32767 #cc_knob['midiChan']
+        #fl_event.port = 4
         fl_event.handled = False
+        status = 0xBF  # CC on MIDI channel 1
+        device.midiOutMsg(status | (fl_event.controlNum << 8) | (fl_event.controlVal << 16))
+        device.processMIDICC(fl_event)
+        message = (0xBF | fl_event.midiChan) | (fl_event.controlNum << 8) | (fl_event.controlVal << 16) | (4 << 24)
+        device.forwardMIDICC(message, 0)
+        device.midiOutMsg(message)
         fl_adapter.skip_claiming_handled = True

@@ -545,13 +545,21 @@ user_defined_plugin_mappings = {
                 {"parameter_index": 20},
                 {"parameter_index": 21},
                 {"parameter_index": 22},
-                {"parameter_index": 23},
-                {"parameter_index": 24},
-                {"parameter_index": 17},
-                {"parameter_index": 17},
-                {"parameter_index": 17},
-                {"parameter_index": 18},
+                {"parameter_index": 23},    # end page
+                {"parameter_index": 24},    #start page
+                {"parameter_index": 25},
+                {"parameter_index": 26},
+                {"parameter_index": None},
+                {"parameter_index": None},
+                {"parameter_index": None},
+                {"parameter_index": None},
+                {"parameter_index": None},  # end page
+                {"parameter_index": 22},    #start page
+                {"parameter_index": 21}, 
+                {"parameter_index": 20},
                 {"parameter_index": 19},
+                {"parameter_index": 18},
+                {"parameter_index": 17}
            ],
         },
         {

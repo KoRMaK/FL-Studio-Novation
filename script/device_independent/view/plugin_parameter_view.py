@@ -283,9 +283,9 @@ class PluginParameterView(View):
         )
 
     def _send_hybrid_cc(self, index, position, fl_event=None):
-        # fl_event.handled = False
-        # fl_adapter.skip_claiming_handled = True
-        # return
+        fl_event.handled = False
+        fl_adapter.skip_claiming_handled = True
+        return
         """Send CC message for hybrid page pass-thru knobs (knobs 6-7)."""
         if fl_event is None:
             return

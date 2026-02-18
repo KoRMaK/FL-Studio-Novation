@@ -90,19 +90,17 @@ class FLToApplicationAdapter:
         self.firmware_version_validation_controller.handle_midi_event(fl_event)
         # Log all incoming MIDI for debugging
         # Format: status, data1, data2, midiChan, controlNum, controlVal
-        print(f"MIDI IN: status={fl_event.status} data1={fl_event.data1} data2={fl_event.data2} " +
-              f"midiChan={fl_event.midiChan} controlNum={fl_event.controlNum} port={fl_event.port} controlVal={fl_event.controlVal}")
+        # print(f"MIDI IN: status={fl_event.status} data1={fl_event.data1} data2={fl_event.data2} " +
+        #       f"midiChan={fl_event.midiChan} controlNum={fl_event.controlNum} port={fl_event.port} controlVal={fl_event.controlVal}")
         # dialog picks up
         #   BF 1C XX
         #   port 4 ch 16 ctrl 28
         # I send
         #   BA 1B
-        return
+        #return
         global skip_claiming_handled
-
-
-        print(fl_event.handled)
-        print(skip_claiming_handled)
+        # print(fl_event.handled)
+        # print(skip_claiming_handled)
         if skip_claiming_handled:
             skip_claiming_handled = False
         else:

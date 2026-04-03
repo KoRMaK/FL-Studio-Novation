@@ -8,12 +8,20 @@ from script.fl_constants import PluginType, RefreshFlags
 class PresetButtonView(View):
     channel_selection_flags = RefreshFlags.ChannelSelection.value | RefreshFlags.ChannelGroup.value
     mixer_track_selection_flags = RefreshFlags.MixerSelection.value
+    ANALOG_LAB_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V"]
 
     def __init__(self, action_dispatcher, button_led_writer, fl, product_defs):
         super().__init__(action_dispatcher)
         self.button_led_writer = button_led_writer
         self.fl = fl
         self.product_defs = product_defs
+
+    def _is_analog_lab_selected(self):
+        """Check if Analog Lab V is the currently selected plugin"""
+        selected_plugin = self.fl.get_selected_plugin()
+        if selected_plugin is None:
+            return False
+        return any(name in selected_plugin for name in self.ANALOG_LAB_PLUGIN_NAMES)
 
     @property
     def preset_navigation_available(self):
@@ -52,6 +60,10 @@ class PresetButtonView(View):
             self._update_button_leds()
 
     def handle_ButtonPressedAction(self, action):
+        # Skip if Analog Lab is selected (let AnalogLabPresetButtonView handle it)
+        if self._is_analog_lab_selected():
+            return
+
         if (
             action.button == self.product_defs.FunctionToButton.get("SelectPreviousPreset")
             and self.preset_navigation_available

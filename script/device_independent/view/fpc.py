@@ -12,15 +12,22 @@ class Fpc(View):
     pad_to_fpc_pad = [4, 5, 6, 7, 12, 13, 14, 15, 0, 1, 2, 3, 8, 9, 10, 11]
     pad_to_fpc_pad.extend([fpc_pad + 16 for fpc_pad in pad_to_fpc_pad])
 
-    def __init__(self, action_dispatcher, pad_led_writer, fl, model):
+    def __init__(self, action_dispatcher, pad_led_writer, fl, model, channel_selection_manager=None):
         super().__init__(action_dispatcher)
         self.action_dispatcher = action_dispatcher
         self.fl = fl
         self.pad_led_writer = pad_led_writer
         self.model = model
+        self.channel_selection_manager = channel_selection_manager
 
         self.note_for_pad = [None] * 16
         self.colour_for_pad = [None] * self.num_fpc_pads_per_bank
+
+    def _get_selected_channel(self):
+        """Get the selected channel, using channel_selection_manager if available"""
+        if self.channel_selection_manager:
+            return self.channel_selection_manager.get_active_channel()
+        return self.fl.selected_channel()
 
     def _on_show(self):
         self._update_notes_for_pads()
@@ -30,11 +37,11 @@ class Fpc(View):
         self._turn_off_leds()
 
     def handle_PadPressAction(self, action):
-        self.fl.send_note_on(self.note_for_pad[action.pad], action.velocity)
+        self.fl.send_note_on(self.note_for_pad[action.pad], action.velocity, group_channel=self._get_selected_channel())
         self.pad_led_writer.set_pad_colour(action.pad, Colours.button_pressed)
 
     def handle_PadReleaseAction(self, action):
-        self.fl.send_note_off(self.note_for_pad[action.pad])
+        self.fl.send_note_off(self.note_for_pad[action.pad], group_channel=self._get_selected_channel())
         self.pad_led_writer.set_pad_colour(action.pad, self.colour_for_pad[action.pad])
 
     def handle_FpcBankAction(self, action):
@@ -54,7 +61,7 @@ class Fpc(View):
     def _get_note_for_pad(self, pad):
         bank_offset = self.model.fpc_active_bank * Pads.Num.value
         fpc_pad = self.pad_to_fpc_pad[pad + bank_offset]
-        return self.fl.plugin.get_midi_note_for_pad(self.fl.selected_channel(), fpc_pad)
+        return self.fl.plugin.get_midi_note_for_pad(self._get_selected_channel(), fpc_pad)
 
     def _update_colours_for_pads(self):
         for pad in range(Pads.Num.value):
@@ -64,7 +71,7 @@ class Fpc(View):
     def _get_colour_for_pad(self, pad):
         bank_offset = self.model.fpc_active_bank * Pads.Num.value
         fpc_pad = self.pad_to_fpc_pad[pad + bank_offset]
-        r, g, b = self.fl.plugin.get_colour(self.fl.selected_channel(), fpc_pad)
+        r, g, b = self.fl.plugin.get_colour(self._get_selected_channel(), fpc_pad)
         return (max(self.colour_component_min, r), max(self.colour_component_min, g), max(self.colour_component_min, b))
 
     def _set_all_pads(self, display):

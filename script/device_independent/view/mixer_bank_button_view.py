@@ -8,11 +8,13 @@ from script.fl_constants import DockSide
 class MixerBankButtonView(View):
     tracks_per_bank = Pots.Num.value
     first_mixer_track_index = 1
+    ARTURIA_STYLE_PLUGIN_NAMES = ["Analog Lab", "Analog Lab V", "SEM V3"]
 
     def __init__(self, action_dispatcher, button_led_writer, fl, product_defs, model):
         super().__init__(action_dispatcher)
         self.fl = fl
         self.model = model
+        self.product_defs = product_defs
         self.arrow_button_view = ScrollingArrowButtonView(
             action_dispatcher,
             button_led_writer,
@@ -24,7 +26,18 @@ class MixerBankButtonView(View):
             speed=ScrollingSpeed.Slow.value,
         )
 
+    def _is_analog_lab_selected(self):
+        """Check if an Arturia-style plugin is the currently selected plugin"""
+        selected_plugin = self.fl.get_selected_plugin()
+        if selected_plugin is None:
+            return False
+        return any(name in selected_plugin for name in self.ARTURIA_STYLE_PLUGIN_NAMES)
+
     def _on_show(self):
+        # Skip mixer banking if Analog Lab V is selected
+        if self._is_analog_lab_selected():
+                return
+                
         self._handle_docked_tracks_changed()
         self.arrow_button_view.set_active_page(self.model.mixer_track_active_bank)
         self._update_mixer_bank_state(self.model.mixer_track_active_bank, self._get_tracks_for_center_dock())
@@ -32,6 +45,35 @@ class MixerBankButtonView(View):
 
     def _on_hide(self):
         self.arrow_button_view.hide()
+
+    def handle_ButtonPressedAction(self, action):
+        # Skip mixer banking if Analog Lab V is selected
+        if self._is_analog_lab_selected():
+            if action.button in [
+                self.product_defs.FunctionToButton.get("MixerBankLeft"),
+                self.product_defs.FunctionToButton.get("MixerBankRight"),
+            ]:
+                return
+        # Let the arrow button view handle it
+        #self.arrow_button_view.handle_ButtonPressedAction(action)
+
+    def handle_ButtonReleasedAction(self, action):
+        # Skip mixer banking if Analog Lab V is selected
+        if self._is_analog_lab_selected():
+            if action.button in [
+                self.product_defs.FunctionToButton.get("MixerBankLeft"),
+                self.product_defs.FunctionToButton.get("MixerBankRight"),
+            ]:
+                return
+        # Let the arrow button view handle it
+        #self.arrow_button_view.handle_ButtonReleasedAction(action)
+
+    def handle_TimerEventAction(self, action):
+        # Skip timer events if Analog Lab is selected (prevents scrolling)
+        if self._is_analog_lab_selected():
+            return
+        # Forward timer events for scrolling behavior
+        #self.arrow_button_view.handle_TimerEventAction(action)
 
     def _on_page_changed(self):
         self.model.mixer_track_active_bank = self.arrow_button_view.active_page

@@ -3,9 +3,11 @@ from script.device_dependent.common import (
     MixerVolumeFaderLayoutManager,
     MixerVolumePotLayoutManager,
 )
-from script.device_dependent.LaunchkeyRange import DrumPadLayoutManager
+from script.device_dependent.LaunchkeyRange import DrumPadLayoutManager, PluginPotLayoutManager
+from script.device_independent.channel_selection_manager import ChannelSelectionManager
 from script.device_independent.fl_gui.fl_window_manager import FLWindowManager
 from script.device_independent.view import (
+    AnalogLabPresetButtonView,
     ChannelSelectedScreenView,
     ChannelSelectNameHighlightView,
     ChannelSelectView,
@@ -14,6 +16,7 @@ from script.device_independent.view import (
     MixerBankView,
     MixerMasterVolumeView,
     MixerVolumeScreenView,
+    PotModeSelectorView,
     TransportPlayPauseButtonView,
     TransportRecordButtonView,
     TransportStopButtonView,
@@ -39,6 +42,7 @@ class Application:
         self.product_defs = product_defs
         self.device_manager = device_manager
         self.model = None
+        self.channel_selection_manager = None
 
         self.global_views = set()
         self.fl_window_manager = FLWindowManager(action_dispatcher, fl)
@@ -51,12 +55,17 @@ class Application:
         self.model = Model()
         self.on_first_time_fader_layout_selected = self._select_pan_pot_layout
 
+        # Initialize independent channel selection for Launchkey
+        self.channel_selection_manager = ChannelSelectionManager(self.model, self.fl)
+        self.channel_selection_manager.sync_with_fl_studio_ui()
+
         self.action_dispatcher.subscribe(self)
 
         self.global_views = {
-            ChannelSelectedScreenView(self.action_dispatcher, self.screen_writer, self.fl),
-            ChannelSelectNameHighlightView(self.action_dispatcher, self.fl, self.model),
-            ChannelSelectView(self.action_dispatcher, self.button_led_writer, self.fl, self.product_defs),
+            AnalogLabPresetButtonView(self.action_dispatcher, self.fl, self.product_defs, self.channel_selection_manager),
+            ChannelSelectedScreenView(self.action_dispatcher, self.screen_writer, self.fl, self.channel_selection_manager),
+            ChannelSelectNameHighlightView(self.action_dispatcher, self.fl, self.model, self.channel_selection_manager),
+            ChannelSelectView(self.action_dispatcher, self.button_led_writer, self.fl, self.product_defs, self.channel_selection_manager),
             DiscardedSurfaceInteractionNotificationView(self.action_dispatcher, self.fl, self.screen_writer),
             TransportPlayPauseButtonView(self.action_dispatcher, self.button_led_writer, self.fl, self.product_defs),
             TransportStopButtonView(self.action_dispatcher, self.fl, self.product_defs),
@@ -72,10 +81,19 @@ class Application:
             ),
             MixerMasterVolumeView(self.action_dispatcher, self.fl),
             MixerVolumeScreenView(self.action_dispatcher, self.screen_writer, self.fl),
+            PotModeSelectorView(self.action_dispatcher, self.pad_led_writer, self.device_manager, self.product_defs, self.model),
             UndoButtonView(self.action_dispatcher, self.fl, self.product_defs),
         }
         for view in self.global_views:
             view.show()
+
+    def handle_ButtonPressedAction(self, action):
+        if action.button == self.product_defs.FunctionToButton.get("ShiftModifier"):
+            self.button_led_writer.shift_modifier_pressed()
+
+    def handle_ButtonReleasedAction(self, action):
+        if action.button == self.product_defs.FunctionToButton.get("ShiftModifier"):
+            self.button_led_writer.shift_modifier_released()
 
     def deinit(self):
         if self.active_pot_layout_manager:
@@ -93,7 +111,7 @@ class Application:
         self.action_dispatcher.unsubscribe(self)
 
     def _select_pan_pot_layout(self):
-        self.device_manager.select_pot_layout(self.product_defs.PotLayout.Pan.value)
+        self.device_manager.select_pot_layout(self.product_defs.PotLayout.Plugin.value)
 
     def handle_PadLayoutChangedAction(self, action):
         if self.active_pad_layout_manager:
@@ -134,6 +152,7 @@ class Application:
                 self.fl,
                 self.product_defs,
                 self.model,
+                self.channel_selection_manager,
             )
         return None
 
@@ -146,6 +165,17 @@ class Application:
                 self.screen_writer,
                 self.model,
                 self.fl_window_manager,
+            )
+        if layout == self.product_defs.PotLayout.Plugin:
+            return PluginPotLayoutManager(
+                self.action_dispatcher,
+                self.fl,
+                self.screen_writer,
+                self.channel_selection_manager,
+                self.model,
+                self.product_defs,
+                self.button_led_writer,
+                self.command_dispatcher,
             )
         if layout == self.product_defs.PotLayout.Pan:
             return MixerPanPotLayoutManager(

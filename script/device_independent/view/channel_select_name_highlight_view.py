@@ -5,10 +5,11 @@ from script.device_independent.util_view.view import View
 class ChannelSelectNameHighlightView(View):
     num_steps_per_page = Pads.Num.value
 
-    def __init__(self, action_dispatcher, fl, model):
+    def __init__(self, action_dispatcher, fl, model, channel_selection_manager=None):
         super().__init__(action_dispatcher)
         self.fl = fl
         self.model = model
+        self.channel_selection_manager = channel_selection_manager
 
     def _on_show(self):
         if self.model.show_all_highlights_active:
@@ -36,19 +37,29 @@ class ChannelSelectNameHighlightView(View):
         self._highlight_and_focus_selected_channel(duration_ms=self.highlight_duration_ms)
 
     def _highlight_and_focus_selected_channel(self, *, duration_ms=HighlightDuration.WithoutEnd.value):
-        if not self.fl.is_any_channel_selected():
+        if self.channel_selection_manager:
+            selected_channel = self.channel_selection_manager.get_active_channel()
+        else:
+            selected_channel = self.fl.selected_channel()
+
+        if selected_channel is None:
             self.fl.turn_off_channelrack_names_highlight()
             return
 
         self.fl.highlight_and_focus_channelrack_names(
-            first_channel=self.fl.selected_channel(), num_channels=1, duration_ms=duration_ms
+            first_channel=selected_channel, num_channels=1, duration_ms=duration_ms
         )
 
     def _highlight_selected_channel(self, *, duration_ms=HighlightDuration.WithoutEnd.value):
-        if not self.fl.is_any_channel_selected():
+        if self.channel_selection_manager:
+            selected_channel = self.channel_selection_manager.get_active_channel()
+        else:
+            selected_channel = self.fl.selected_channel()
+
+        if selected_channel is None:
             self.fl.turn_off_channelrack_names_highlight()
             return
 
         self.fl.highlight_channelrack_names(
-            first_channel=self.fl.selected_channel(), num_channels=1, duration_ms=duration_ms
+            first_channel=selected_channel, num_channels=1, duration_ms=duration_ms
         )

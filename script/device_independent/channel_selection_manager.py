@@ -84,8 +84,11 @@ class ChannelSelectionManager:
             if not current_name.endswith(self.MARKER_SUFFIX):
                 new_name = current_name + self.MARKER_SUFFIX
                 channels.setChannelName(channel_index, new_name)
-        except Exception:
-            pass  # Silently fail if we can't modify the name
+                #print(f"[csm] marked channel {channel_index}: {current_name!r} -> {new_name!r}")
+            #else:
+                #print(f"[csm] channel {channel_index} already marked: {current_name!r}")
+        except Exception as e:
+            pass  #print(f"[csm] _add_marker_to_channel({channel_index}) FAILED: {e}")
 
     def _remove_marker_from_channel(self, channel_index):
         """Remove the marker suffix from a channel's name"""
@@ -94,5 +97,6 @@ class ChannelSelectionManager:
             if current_name.endswith(self.MARKER_SUFFIX):
                 new_name = current_name[:-len(self.MARKER_SUFFIX)]
                 channels.setChannelName(channel_index, new_name)
-        except Exception:
-            pass  # Silently fail if we can't modify the name
+                #print(f"[csm] unmarked channel {channel_index}: {current_name!r} -> {new_name!r}")
+        except Exception as e:
+            pass  #print(f"[csm] _remove_marker_from_channel({channel_index}) FAILED: {e}")

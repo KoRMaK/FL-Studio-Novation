@@ -26,11 +26,15 @@ def scan_for_marked_channel():
             channel_name = channels.getChannelName(channel_index)
             if channel_name.endswith(MARKER_SUFFIX):
                 launchkey_selected_channel = channel_index
+                #print(f"[lk_midi] scan: found marked channel {channel_index} ({channel_name!r})")
                 return
         # No marked channel found
         launchkey_selected_channel = None
-    except Exception:
+        #names = [channels.getChannelName(i) for i in range(channel_count)]
+        #print(f"[lk_midi] scan: no marked channel found. channels={names}")
+    except Exception as e:
         launchkey_selected_channel = None
+        #print(f"[lk_midi] scan: exception -> {e}")
 
 
 def OnIdle():
